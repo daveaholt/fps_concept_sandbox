@@ -1,0 +1,76 @@
+# 03 — Infantry Player
+
+`entities/player/player.tscn` — root `CharacterBody3D`, in groups `controllable`, `infantry`.
+
+## Scene tree
+
+```
+Player (CharacterBody3D)
+├── CollisionShape3D (capsule, r 0.4, h 1.8)
+├── Head (Node3D, y ≈ 1.6)              # yaw on Player, pitch on Head
+│   ├── Camera3D
+│   └── InteractRay (RayCast3D, len 3.0, mask: interact | vehicle)
+├── RifleStub (hitscan from camera center)
+└── HUD hooks via EventBus only
+```
+
+## Movement model
+
+Standard Quake-descendant controller — no acceleration curves cleverness in v1, just distinct ground/air handling. **Structural requirement from 10:** all movement logic lives in a pure step function, `static func simulate(state, cmd, delta) -> state`, run identically by server (authoritative) and owning client (prediction). It performs its own collide-and-slide via `PhysicsServer3D` shape casts against static geometry rather than `move_and_slide()` (which can't replay arbitrary states); the `CharacterBody3D` root is effectively a transform holder + collision shape. Keep the model simple — every feature added here is a feature the replay path must reproduce exactly.
+
+- Grounded: velocity moves toward `wish_dir * speed` at `accel`; instant-feeling but not snappy-instant.
+- Air: same steering at `air_accel` (much lower); no air-strafe tricks.
+- Gravity from project settings times `gravity_scale`; jump sets vertical velocity directly.
+- `floor_max_angle` default (45°); ramps in the test map stay below this.
+
+### Tunables
+
+| Export | Default | Notes |
+|---|---|---|
+| `walk_speed` | 5.0 m/s | |
+| `sprint_speed` | 8.5 m/s | Sprint only forward-ish (dot(wish, forward) > 0.5) |
+| `accel` / `air_accel` | 60 / 10 m/s² | |
+| `jump_velocity` | 4.8 m/s | ≈ 1.2 m jump apex |
+| `mouse_sensitivity` | 0.12 °/px | Pitch clamped ±89° |
+| `gravity_scale` | 1.0 | |
+
+## Interaction
+
+Every physics frame while possessed, `InteractRay` reports what it hits. If the collider (or an ancestor) is in group `vehicle_entry`, emit `EventBus.interaction_prompt("Enter %s [E]" % name)`; on `interact`, call `GameManager.possess(vehicle)` via the vehicle's `request_enter(from: Node)` (see 04). Prompt clears when the ray misses. Additionally, a fallback overlap check (small sphere query at the player position) catches the "standing right against the hull, looking slightly off" case — ray-only entry proved annoying in similar prototypes.
+
+## Weapons (primary / secondary)
+
+Two slots, always the same loadout in v1: **rifle** (primary) and **pistol** (secondary). Both fire ballistic projectiles through the shared `BallisticsManager` (11) — no hitscan; damage, drop, and latency compensation are 11's business. No ammo, no reload, no ADS, no pickups. The pistol exists to make weapon *switching* a real specced system, not for balance.
+
+Weapon definitions are resources (`assets/weapons/*.tres`):
+
+| Field | Rifle | Pistol |
+|---|---|---|
+| `ballistics_params` | rifle round (11) | pistol round (11) |
+| `fire_mode` | full-auto | semi-auto (one shot per click) |
+| `rpm` | 600 | 450 cap |
+| `draw_time` | 0.5 s | 0.3 s (classic fast-swap) |
+
+**Switching is simulation state, not UI state.** `weapon_index`, `switch_progress`, and `fire_cooldown` live in the infantry sim-state struct, driven by command bits, so switching is client-predicted and replay-reconciled like movement (10) and enforced server-side like everything else — you cannot fire during a switch, and the server agrees for the same reason the client does: same pure function. Bindings per 02: `1` primary, `2` secondary, scroll cycles.
+
+**Feedback:** HUD weapon name + slot indicator (via the possessed-node poll, 04); switch shows a brief draw progress tick. No viewmodel arms in v1 (backlog) — tracers, HUD, and sound-stub are the feedback. Fire while `switch_progress < 1` is ignored, not queued.
+
+## Visual (what other players see)
+
+You are first-person and see nothing of yourself, but remote players see a **rigid placeholder soldier** under `Visual` (per 09): capsule torso, head sphere, and a prism "weapon proxy" held at aim height. No skeleton, no animation — legs don't walk, the body glides and yaws; accepted placeholder jank, and precisely why hit-zone rewind stays exact (11). The placeholder's proportions intentionally match the `HitZones` shapes (the head sphere *is* the head zone), so what you aim at is what registers. The weapon proxy swaps mesh with the active slot — weapon switching is visible to others for free — and pitches with the owner's replicated aim so you can read where a soldier is looking. Own-body hiding: the body meshes live on a render layer the owner's camera culls (`cull_mask`), so there's no per-node hide logic and spectator/chase cams (if ever added) work unchanged.
+
+## Hit zones
+
+Per 11's locational-damage spec, the soldier carries a `HitZones` resource: head sphere (×2.0) at the top of the capsule, torso box (×1.0), limb boxes (×0.75) hugging the capsule's sides/lower half. Rigid, unanimated, rewind-exact. Rifle body shot = 25, headshot = 50, leg = 18.75 — enough spread to verify at the firing range against a target-dummy capsule with painted zone bands.
+
+## Death
+
+`apply_damage` reduces `health` (100 default). At ≤ 0: `GameManager.player_died()`. No ragdoll — the body just despawns (`queue_free`) and the deploy map opens. There is nothing in the sandbox that deals damage to the player yet except tank splash (see 05); that's fine, it exercises the loop.
+
+## Acceptance criteria (M1)
+
+- Mouse look with clamped pitch; no roll drift after wild spins.
+- Walk/sprint/jump around the test map including up ramps; no sliding on 20° slopes when standing still (`stop_on_slope` behavior verified).
+- Prompt appears when looking at a vehicle within 3 m and E possesses it.
+- Esc releases mouse; clicking recaptures.
+- Weapon switch: 1/2/scroll swap with correct draw times; firing during a draw does nothing; rifle full-auto holds, pistol requires clicks; under simulated latency (M3) switch-then-immediately-fire predicts and reconciles without a phantom shot.
