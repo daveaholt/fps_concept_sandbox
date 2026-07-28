@@ -46,7 +46,7 @@ Heli per 06 reusing the 04 framework and the vehicle replication path from M5 un
 
 ## M7 — Sandbox polish pass (open-ended)
 
-Backlog, any order: passenger seats · vehicle icons + *other players* on deploy map · exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · tank cockpit cam · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
+Backlog, any order: passenger seats · vehicle icons + *squad/team* players on deploy map (never all players — see 07) · exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · tank cockpit cam · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
 
 ## Working agreements
 
