@@ -11,6 +11,7 @@ extends Resource
 @export var splash_radius: float = 0.0
 @export var splash_damage: float = 0.0
 @export var tracer_length: float = 6.0
+@export var tracer_width: float = 0.06
 @export var tracer_colour: Color = Color(1.0, 0.85, 0.4)
 
 
