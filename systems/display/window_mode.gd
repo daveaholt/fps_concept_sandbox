@@ -12,15 +12,23 @@ func is_fullscreen() -> bool:
 		or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
 
 
-func set_fullscreen(enabled: bool) -> void:
+func set_fullscreen(enabled: bool) -> bool:
 	if _is_headless():
-		return
-	DisplayServer.window_set_mode(
-		DisplayServer.WINDOW_MODE_FULLSCREEN if enabled else DisplayServer.WINDOW_MODE_WINDOWED)
+		return false
+
+	var target := DisplayServer.WINDOW_MODE_FULLSCREEN if enabled \
+		else DisplayServer.WINDOW_MODE_WINDOWED
+	DisplayServer.window_set_mode(target)
+	if DisplayServer.window_get_mode() == target:
+		return true
+
+	push_warning("[display] window manager refused %s. A game embedded in the editor only allows Windowed — set Editor Settings > Run > Window Placement > Game Embed Mode to 'Make Game Workspace Floating', or run the project standalone."
+		% ["fullscreen" if enabled else "windowed"])
+	return false
 
 
-func toggle() -> void:
-	set_fullscreen(not is_fullscreen())
+func toggle() -> bool:
+	return set_fullscreen(not is_fullscreen())
 
 
 func _unhandled_input(event: InputEvent) -> void:
