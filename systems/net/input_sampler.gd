@@ -48,6 +48,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("weapon_cycle_down"):
 		_latched_buttons |= InputCommand.WEAPON_CYCLE_DOWN
 
+	if event.is_action_pressed("toggle_camera"):
+		var entity := GameClient.my_entity
+		if entity != null and is_instance_valid(entity) and entity.has_method("toggle_camera"):
+			entity.toggle_camera()
+
 	if event.is_action_pressed("ui_cancel"):
 		release_mouse()
 		return
@@ -78,7 +83,7 @@ func build_command(delta: float) -> InputCommand:
 		return InputCommand.make(tick, Vector2.ZERO, 0, aim_vector())
 
 	_apply_stick_look(delta)
-	var cmd := InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector())
+	var cmd := InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector(), _axes_vector())
 	_latched_buttons = 0
 	_poll_dev_keys()
 	return cmd
@@ -135,6 +140,12 @@ func _bot_driver_command() -> InputCommand:
 	if flat.length() < 5.0 and tick % 30 == 0:
 		GameClient.request_enter(tank)
 	return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
+
+
+func _axes_vector() -> Vector2:
+	return Vector2(
+		Input.get_action_strength("yaw_right") - Input.get_action_strength("yaw_left"),
+		Input.get_action_strength("collective_up") - Input.get_action_strength("collective_down"))
 
 
 func _move_vector() -> Vector2:

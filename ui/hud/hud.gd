@@ -39,7 +39,9 @@ func _process(_delta: float) -> void:
 		return
 
 	visible = true
-	if _entity.is_in_group("vehicle"):
+	if _entity.is_in_group("helicopter"):
+		_helicopter_panel()
+	elif _entity.is_in_group("vehicle"):
 		_vehicle_panel()
 	else:
 		_infantry_panel()
@@ -57,6 +59,26 @@ func _infantry_panel() -> void:
 	_draw_bar.visible = drawing
 	_draw_bar.value = state.switch_progress * 100.0
 	_crosshair.modulate.a = 0.35 if drawing else 1.0
+
+
+func _helicopter_panel() -> void:
+	_health_label.text = "%s   %.0f km/h   %.0f m AGL   %+.1f m/s" % [
+		_entity.get_display_name(), _entity.speed_kmh(),
+		_entity.altitude_agl(), _entity.climb_rate()]
+
+	var rotor: float = _entity.rotor_fraction()
+	var refusal: String = _entity.exit_refusal()
+	if refusal != "":
+		_weapon_label.text = refusal
+	elif _entity.can_hover():
+		_weapon_label.text = "Rotor %.0f%%   Collective %.0f%%   F — exit" % [
+			rotor * 100.0, _entity.collective_fraction() * 100.0]
+	else:
+		_weapon_label.text = "Rotor %.0f%% — spooling" % (rotor * 100.0)
+
+	_draw_bar.visible = true
+	_draw_bar.value = _entity.collective_fraction() * 100.0
+	_crosshair.modulate.a = 0.0
 
 
 func _vehicle_panel() -> void:

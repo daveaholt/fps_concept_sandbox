@@ -63,3 +63,11 @@ Rotor RPM %, collective %, altitude (ray-derived AGL), speed, climb rate, "Land 
 - `auto_level = 0` flight is possible for an expert (i.e., assists are assists, not physics band-aids).
 - Landing at < 4 m/s descent on skids: no bounce-flip.
 - Mid-air F correctly refuses; landed F exits beside the skid.
+
+## Open questions
+
+- M6: the 04 framework and the M5 replication path were reused **untouched**. `VehicleCommon` dropped in unchanged, `GameServer.register_vehicle` picked the heli up from the level's `Vehicles` node with no new code, and snapshots carry it through the existing vehicle path. Two keys ride along that `SnapshotBuffer._blend` does not know how to interpolate (`rr` rotor rpm, `co` collective); the blend copies unknown keys from the newer snapshot, so they step at 20 Hz instead of interpolating. For a spool gauge and a rotor-spin visual that is invisible, so the blend was deliberately left alone rather than extended.
+- M6: `max_lift` is exported as a number (29100 N) rather than derived from `1.35 x m*g`, matching the tunables table above. If `mass` is ever changed, `max_lift` must be changed with it or the hover trim moves; `verify_m6` asserts the 1.35 ratio so that cannot drift silently.
+- M6: **AGL had to be probed from above the hull, not from the origin.** The first version cast down from `global_position`, which sits at skid level. Landed on the 0.6 m airfield pad, the ray started *below* the pad's top face, missed it, and reported height above the terrain underneath (0.59 m instead of 0). Harmless there, but on the Hilltop plateau it would have read ~6 m and **refused the exit that 06's full-loop acceptance criterion depends on**. The probe now starts `ground_probe_lift` (1.5 m) above the origin. This is the same shape of bug as the infantry floor probe in 03, and the same fix: never cast a ground probe from a point that can be inside or below the ground.
+- M6: `toggle_camera` is handled by the client input layer calling `toggle_camera()` on the possessed entity, not by an `Input` read inside the entity (01/03 forbid those in `entities/`) and not by a bit in `InputCommand` (camera choice is client-local and never needs to reach the server).
+- M6: the networked flight verdict is still outstanding — the flagged 100 ms experiment has not been run yet, so nothing is claimed about it either way.

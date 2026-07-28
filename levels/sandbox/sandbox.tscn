@@ -21,6 +21,7 @@
 [ext_resource type="Script" path="res://levels/sandbox/dev_overlay.gd" id="17_v2ya2"]
 [ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="18_tx1dy"]
 [ext_resource type="PackedScene" path="res://entities/tank/tank.tscn" id="19_aj57l"]
+[ext_resource type="PackedScene" path="res://entities/helicopter/helicopter.tscn" id="24_heli"]
 [ext_resource type="Script" path="res://systems/ballistics/ballistics_manager.gd" id="19_ia0wb"]
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="19_p1wtp"]
 [ext_resource type="Script" path="res://entities/tank/tank.gd" id="20_nnn8o"]
@@ -1466,6 +1467,8 @@ outline_size = 16
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0.8, 40)
 script = ExtResource("20_nnn8o")
 
+[node name="Helicopter" parent="Vehicles" instance=ExtResource("24_heli")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0.65, -40)
 [node name="DevOverlay" type="CanvasLayer" parent="." unique_id=1324878947]
 
 [node name="NetStatus" type="Label" parent="DevOverlay" unique_id=383491466]
