@@ -56,8 +56,8 @@ func register_level(spawn_root: Node, default_spawn: SpawnPoint,
 	_spawn_root = spawn_root
 	_default_spawn = default_spawn
 	ballistics = ballistics_manager
-	if ballistics != null and is_active:
-		ballistics.authoritative = true
+	if ballistics != null:
+		ballistics.authoritative = is_active
 
 
 func get_peer_rtt(peer_id: int) -> float:

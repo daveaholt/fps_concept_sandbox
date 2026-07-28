@@ -77,8 +77,6 @@ func _start_local_systems() -> void:
 func register_level(players_root: Node, ballistics_manager: BallisticsManager = null) -> void:
 	_players_root = players_root
 	ballistics = ballistics_manager
-	if ballistics != null:
-		ballistics.authoritative = false
 	if not is_active:
 		return
 	if GameServer.is_active:
@@ -260,9 +258,9 @@ func _net_log(delta: float) -> void:
 		return
 	_log_countdown = 1.0
 	if GameServer.is_active and GameServer.ballistics != null:
-		print("[ball] live=%d hits=%d targets_registered=%d"
-			% [GameServer.ballistics.live_count(), GameServer.ballistics.hits_logged,
-				GameServer.get_entity_count()])
+		print("[ball] auth=%s live=%d hits=%d targets=%d"
+			% [GameServer.ballistics.authoritative, GameServer.ballistics.live_count(),
+				GameServer.ballistics.hits_logged, GameServer.get_entity_count()])
 		return
 	print("[net] snapshots=%d rate=%.1f/s buffer=%d lag=%.1ft reorder=%d resync=%d acked=%d entities=%d dropped=%d"
 		% [buffer.received, buffer.received / maxf(_uptime, 0.001), buffer.depth(), buffer.lag_ticks(),

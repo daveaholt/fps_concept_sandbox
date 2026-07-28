@@ -65,6 +65,7 @@ func spawn(origin: Vector3, direction: Vector3, params_id: int, shooter_peer: in
 
 func _physics_process(delta: float) -> void:
 	if _live.is_empty():
+		_update_tracers()
 		return
 
 	var survivors: Array[Dictionary] = []
