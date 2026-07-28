@@ -21,7 +21,14 @@ func _ready() -> void:
 
 
 func has_focus() -> bool:
-	return GameClient.my_entity != null
+	return GameClient.my_entity != null and window_focused()
+
+
+func window_focused() -> bool:
+	if NetCli.is_bot() or DisplayServer.get_name() == "headless":
+		return true
+	var window := get_window()
+	return window != null and window.has_focus()
 
 
 func capture_mouse() -> void:
@@ -64,6 +71,11 @@ func build_command(delta: float) -> InputCommand:
 	tick += 1
 	if NetCli.is_bot():
 		return _bot_command()
+
+	if not window_focused():
+		_latched_buttons = 0
+		_dev_damage_latch = false
+		return InputCommand.make(tick, Vector2.ZERO, 0, aim_vector())
 
 	_apply_stick_look(delta)
 	var cmd := InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector())
