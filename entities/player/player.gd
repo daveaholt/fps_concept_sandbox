@@ -75,6 +75,18 @@ func _ready() -> void:
 	reset_physics_interpolation()
 
 
+func set_spawn_aim(direction: Vector3) -> void:
+	var flat := Vector3(direction.x, 0.0, direction.z)
+	if flat.length_squared() < 0.000001:
+		flat = Vector3.FORWARD
+	_aim = flat.normalized()
+	_last_command.aim = _aim
+
+
+func get_aim() -> Vector3:
+	return _aim
+
+
 func get_display_name() -> String:
 	return "Infantry"
 

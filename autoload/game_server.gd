@@ -130,18 +130,51 @@ func _release_peer(peer_id: int) -> void:
 
 @rpc("any_peer", "call_remote", "reliable")
 func client_ready() -> void:
+	if is_active:
+		client_ready_local(multiplayer.get_remote_sender_id())
+
+
+func client_ready_local(peer_id: int) -> void:
+	print("[server] peer %d is ready and awaiting deployment" % peer_id)
+
+
+func find_spawn_point(display_name: String) -> SpawnPoint:
+	for node in get_tree().get_nodes_in_group("spawn_points"):
+		if node is SpawnPoint and node.display_name == display_name:
+			return node
+	return null
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_spawn_rpc(spawn_name: String) -> void:
 	if not is_active:
 		return
-	deploy(multiplayer.get_remote_sender_id())
+	handle_spawn_request(multiplayer.get_remote_sender_id(), find_spawn_point(spawn_name))
 
 
-func deploy(peer_id: int) -> Node:
+func handle_spawn_request(peer: int, spawn_point: SpawnPoint) -> void:
+	if not is_active:
+		return
+	if _possession.has(peer):
+		push_warning("[server] REJECTED spawn from peer %d: already deployed" % peer)
+		return
+	if spawn_point == null:
+		push_warning("[server] REJECTED spawn from peer %d: unknown spawn point" % peer)
+		return
+	if not spawn_point.enabled:
+		push_warning("[server] REJECTED spawn from peer %d: spawn point '%s' is disabled"
+			% [peer, spawn_point.display_name])
+		return
+	deploy(peer, spawn_point)
+
+
+func deploy(peer_id: int, spawn_point: SpawnPoint = null) -> Node:
 	if not is_active or _spawn_root == null:
 		return null
 	if _possession.has(peer_id):
 		return _possession[peer_id]
 
-	var point := _default_spawn
+	var point := spawn_point if spawn_point != null else _default_spawn
 	if point == null:
 		push_error("[server] no spawn point available for peer %d" % peer_id)
 		return null
@@ -160,6 +193,7 @@ func deploy(peer_id: int) -> Node:
 	entity.position = origin
 	_spawn_root.add_child(entity, true)
 	entity.state.position = origin
+	entity.set_spawn_aim(-point.global_transform.basis.z)
 	entity.died.connect(entity_died)
 	entity.fired.connect(_on_entity_fired.bind(peer_id))
 	if ballistics != null:
@@ -281,24 +315,13 @@ func entity_died(entity: Node) -> void:
 	if not is_active or entity == null:
 		return
 	var peer_id: int = entity.owner_peer
-	print("[server] %s died (peer %d)" % [entity.name, peer_id])
+	print("[server] %s died (peer %d) — awaiting redeploy" % [entity.name, peer_id])
 	_release_peer(peer_id)
 	possession_granted.emit(peer_id, null)
-	_respawn_after_delay(peer_id)
-
-
-func _respawn_after_delay(peer_id: int) -> void:
-	await get_tree().create_timer(RESPAWN_DELAY).timeout
-	if not is_active:
-		return
-	if peer_id != 1 and not multiplayer.get_peers().has(peer_id):
-		return
-	deploy(peer_id)
-
-
-func handle_spawn_request(peer: int, spawn_point: SpawnPoint) -> void:
-	push_warning("[server] handle_spawn_request(peer %d, %s) is a stub until M4"
-		% [peer, spawn_point.display_name if spawn_point else "<null>"])
+	if peer_id == 1:
+		GameClient.on_killed()
+	elif multiplayer.get_peers().has(peer_id):
+		GameClient.on_killed.rpc_id(peer_id)
 
 
 func handle_enter_request(peer: int, vehicle: Node) -> void:

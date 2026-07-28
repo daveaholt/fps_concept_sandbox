@@ -32,6 +32,8 @@ var _acked_tick: int = 0
 var _log_countdown: float = 1.0
 var _uptime: float = 0.0
 var _peer_id: int = 0
+var deploy_map_open: bool = false
+var was_killed: bool = false
 var _pending_auth: Dictionary = {}
 var _pending_auth_tick: int = 0
 
@@ -80,9 +82,10 @@ func register_level(players_root: Node, ballistics_manager: BallisticsManager = 
 	if not is_active:
 		return
 	if GameServer.is_active:
-		GameServer.deploy(get_peer_id())
+		GameServer.client_ready_local(get_peer_id())
 	elif can_rpc():
 		GameServer.client_ready.rpc_id(1)
+	set_deploy_map(true)
 
 
 func _connect_to(address: String, port: int) -> void:
@@ -304,6 +307,9 @@ func set_my_entity(entity: Node) -> void:
 	prediction.clear()
 	if my_entity != null and my_entity.has_method("possess"):
 		my_entity.possess()
+		was_killed = false
+		deploy_map_open = false
+		EventBus.deploy_map_toggled.emit(false)
 		if sampler != null:
 			sampler.capture_mouse()
 	elif sampler != null:
@@ -353,8 +359,60 @@ func _on_server_disconnected() -> void:
 
 
 func request_spawn(spawn_point: SpawnPoint) -> void:
-	push_warning("[client] request_spawn(%s) is a stub until M4"
-		% [spawn_point.display_name if spawn_point else "<null>"])
+	if spawn_point == null:
+		return
+	if GameServer.is_active:
+		GameServer.handle_spawn_request(get_peer_id(), spawn_point)
+	elif can_rpc():
+		GameServer.request_spawn_rpc.rpc_id(1, spawn_point.display_name)
+
+
+func request_forged_spawn(spawn_point: SpawnPoint) -> void:
+	if spawn_point == null:
+		return
+	print("[client] sending a deliberately illegal spawn request while alive")
+	if GameServer.is_active:
+		GameServer.handle_spawn_request(get_peer_id(), spawn_point)
+	elif can_rpc():
+		GameServer.request_spawn_rpc.rpc_id(1, spawn_point.display_name)
+
+
+func is_alive() -> bool:
+	return my_entity != null and is_instance_valid(my_entity)
+
+
+@rpc("authority", "call_remote", "reliable")
+func on_killed() -> void:
+	was_killed = true
+	set_my_entity(null)
+	set_deploy_map(true)
+
+
+func set_deploy_map(open: bool) -> void:
+	if open == deploy_map_open:
+		return
+	if not open and not is_alive():
+		return
+	deploy_map_open = open
+	if sampler != null:
+		if open:
+			sampler.release_mouse()
+		else:
+			sampler.capture_mouse()
+	EventBus.deploy_map_toggled.emit(open)
+	if open and NetCli.is_bot():
+		_auto_deploy()
+
+
+func _auto_deploy() -> void:
+	await get_tree().create_timer(0.5).timeout
+	if is_alive() or not is_active:
+		return
+	var points := get_tree().get_nodes_in_group("spawn_points")
+	for point in points:
+		if point is SpawnPoint and point.enabled:
+			request_spawn(point)
+			return
 
 
 func request_enter(vehicle: Node) -> void:
@@ -367,4 +425,4 @@ func request_exit() -> void:
 
 
 func request_deploy_map(open: bool) -> void:
-	push_warning("[client] request_deploy_map(%s) is a stub until M4" % open)
+	set_deploy_map(open)

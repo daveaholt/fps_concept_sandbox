@@ -50,3 +50,7 @@ Vehicles also register icons (tank/heli glyphs) via the same projection path, re
 
 - Ortho top-down of a map with a tall hill will parallax markers slightly (projection is exact, but the *terrain under* the marker reads offset if the point is elevated). Likely fine at ortho; check at Hilltop.
 - KIA variant: add respawn delay timer (BF-style)? Trivial to add, zero concept value — deferred.
+- M4: the ortho view frames the 200x200 play area (size 230), not the whole footprint including the 500 m firing range. 11 suggested the ortho size should follow the range strip, but including it would shrink the play area to a sliver and make the spawn screen useless. All spawn points are inside the play area, so the range is deliberately off-map here.
+- M4: no vehicle icons yet — there are no vehicles until M5. The projection loop is written against the spawn-point group and takes vehicles the same way when they exist.
+- M4: bots auto-deploy at the first enabled spawn point half a second after the map opens. Without it every headless test would sit on the deploy screen forever, since nothing clicks Deploy.
+- M4: `client_ready` no longer deploys. A peer that has loaded the level is marked ready and waits for an explicit `request_spawn`, which is what makes the "peer is dead/undeployed" validation meaningful rather than a formality.

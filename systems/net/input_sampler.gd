@@ -103,6 +103,8 @@ func _apply_stick_look(delta: float) -> void:
 
 
 func _bot_command() -> InputCommand:
+	if NetCli.is_bot_suicidal() and tick % 180 == 0:
+		GameClient.request_dev_damage(60.0)
 	var buttons := InputCommand.FIRE if NetCli.is_bot_firing() else 0
 	pitch = 0.25 if NetCli.is_bot_firing() else 0.0
 	if NetCli.is_bot_wall():

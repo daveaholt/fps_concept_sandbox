@@ -43,6 +43,10 @@ static func is_bot_firing() -> bool:
 	return all_args().has("--bot-fire")
 
 
+static func is_bot_suicidal() -> bool:
+	return all_args().has("--bot-suicide")
+
+
 static func is_net_trace() -> bool:
 	return all_args().has("--net-trace")
 

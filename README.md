@@ -59,6 +59,7 @@ Keyboard/mouse and an Xbox-layout gamepad both work at once — no mode switch, 
 | Fire | `LMB` — rifle full-auto, pistol semi-auto | `RT` |
 | Weapons | `1` rifle · `2` pistol · scroll cycles | D-pad up/down · `Y` swaps |
 | Fullscreen | `F11` | — |
+| Deploy map | `M` — recon while alive; opens automatically at session start and on death | `Back` |
 | Dev damage | `K` — 25 damage to yourself, to exercise the death loop | — |
 
 ## Project layout
@@ -123,8 +124,8 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 | M1 | Infantry simulation, host mode | **Done** (`m1`) |
 | M2 | Replication core | **Done** (`m2`) |
 | M3 | Prediction, reconciliation, ballistics | **Done** (`m3`) |
-| M4 | Deploy map + death loop | Next |
-| M5 | Vehicle framework + tank | |
+| M4 | Deploy map + death loop | **Done** (`m4`) |
+| M5 | Vehicle framework + tank | Next |
 | M6 | Helicopter | |
 | M7 | Sandbox polish pass | |
 

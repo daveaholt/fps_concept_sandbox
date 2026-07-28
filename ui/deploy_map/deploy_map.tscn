@@ -1,0 +1,77 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://ui/deploy_map/deploy_map.gd" id="1_xfjkj"]
+
+[node name="DeployMap" type="Control" unique_id=1453987663]
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_xfjkj")
+
+[node name="ViewportBox" type="SubViewportContainer" parent="." unique_id=1633513219]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="ViewportBox" unique_id=546997373]
+handle_input_locally = false
+size = Vector2i(1280, 720)
+
+[node name="TopDownCamera" type="Camera3D" parent="ViewportBox/Viewport" unique_id=1847902548]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 150, 0)
+projection = 1
+size = 230.0
+far = 400.0
+
+[node name="Dim" type="ColorRect" parent="." unique_id=1146233567]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.02, 0.04, 0.07, 0.55)
+
+[node name="MarkerLayer" type="Control" parent="." unique_id=58247590]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Header" type="Label" parent="." unique_id=212256600]
+layout_mode = 0
+anchor_right = 1.0
+offset_top = 28.0
+offset_bottom = 90.0
+theme_override_font_sizes/font_size = 44
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "DEPLOY"
+horizontal_alignment = 1
+
+[node name="Footer" type="Label" parent="." unique_id=2033364129]
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -104.0
+offset_bottom = -74.0
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+horizontal_alignment = 1
+
+[node name="DeployButton" type="Button" parent="." unique_id=877297457]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -110.0
+offset_top = -66.0
+offset_right = 110.0
+offset_bottom = -20.0
+text = "DEPLOY"
