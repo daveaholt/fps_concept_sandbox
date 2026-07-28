@@ -32,7 +32,7 @@ static func is_net_log() -> bool:
 
 
 static func is_bot() -> bool:
-	return all_args().has("--bot") or all_args().has("--bot-wall")
+	return all_args().has("--bot") or all_args().has("--bot-wall") or all_args().has("--bot-drive")
 
 
 static func is_bot_wall() -> bool:
@@ -45,6 +45,10 @@ static func is_bot_firing() -> bool:
 
 static func is_bot_suicidal() -> bool:
 	return all_args().has("--bot-suicide")
+
+
+static func is_bot_driver() -> bool:
+	return all_args().has("--bot-drive")
 
 
 static func is_net_trace() -> bool:

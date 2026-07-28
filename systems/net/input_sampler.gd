@@ -103,6 +103,8 @@ func _apply_stick_look(delta: float) -> void:
 
 
 func _bot_command() -> InputCommand:
+	if NetCli.is_bot_driver():
+		return _bot_driver_command()
 	if NetCli.is_bot_suicidal() and tick % 180 == 0:
 		GameClient.request_dev_damage(60.0)
 	var buttons := InputCommand.FIRE if NetCli.is_bot_firing() else 0
@@ -113,6 +115,26 @@ func _bot_command() -> InputCommand:
 	var phase := float(tick) / float(NetCli.TICK_RATE)
 	yaw = wrapf(phase * 1.6, -PI, PI)
 	return InputCommand.make(tick, Vector2(0.0, 1.0), buttons, aim_vector())
+
+
+func _bot_driver_command() -> InputCommand:
+	var entity: Node = GameClient.my_entity
+	if entity != null and entity.is_in_group("vehicle"):
+		yaw = wrapf(yaw + 0.01, -PI, PI)
+		return InputCommand.make(tick, Vector2(0.3, 1.0), 0, aim_vector())
+
+	var tank := GameClient.get_tree().get_first_node_in_group("tank")
+	if tank == null or entity == null:
+		return InputCommand.make(tick, Vector2.ZERO, 0, aim_vector())
+
+	var to_tank: Vector3 = (tank as Node3D).global_position - (entity as Node3D).global_position
+	var flat := Vector3(to_tank.x, 0.0, to_tank.z)
+	if flat.length() > 0.5:
+		yaw = atan2(-flat.x, -flat.z)
+	pitch = 0.0
+	if flat.length() < 5.0 and tick % 30 == 0:
+		GameClient.request_enter(tank)
+	return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
 
 
 func _move_vector() -> Vector2:

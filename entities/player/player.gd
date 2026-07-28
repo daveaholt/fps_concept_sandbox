@@ -118,6 +118,10 @@ func is_possessed() -> bool:
 	return _possessed
 
 
+func is_predicted() -> bool:
+	return role == Role.PREDICTED
+
+
 func push_command(cmd: InputCommand) -> void:
 	_pending.append(cmd)
 

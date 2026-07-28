@@ -109,7 +109,11 @@ func _connect_to(address: String, port: int) -> void:
 
 
 func is_predicting() -> bool:
-	return my_entity != null and is_instance_valid(my_entity) 		and my_entity.role == my_entity.Role.PREDICTED
+	if my_entity == null or not is_instance_valid(my_entity):
+		return false
+	if not my_entity.has_method("is_predicted"):
+		return false
+	return my_entity.is_predicted()
 
 
 func _physics_process(delta: float) -> void:
