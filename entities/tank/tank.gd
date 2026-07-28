@@ -15,7 +15,8 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var suspension_damping_compression: float = 3.0
 @export var suspension_damping_relaxation: float = 4.0
 @export var max_yaw_rate: float = 1.35
-@export var yaw_accel: float = 6.0
+@export var yaw_accel: float = 25.0
+@export var yaw_inertia: float = 16667.0
 
 @export var turret_yaw_speed_deg: float = 60.0
 @export var cannon_pitch_speed_deg: float = 30.0
@@ -324,8 +325,8 @@ func _apply_yaw(steer_input: float, authority: float, pivoting: bool, travel: fl
 		target *= travel
 	var up := global_transform.basis.y
 	var spin := angular_velocity.dot(up)
-	var blended := move_toward(spin, target, yaw_accel * delta)
-	angular_velocity += up * (blended - spin)
+	var accel := clampf((target - spin) / maxf(delta, 0.0001), -yaw_accel, yaw_accel)
+	apply_torque(up * accel * yaw_inertia)
 
 
 func _grounded_wheels() -> int:
