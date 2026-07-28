@@ -58,6 +58,8 @@ Stick look is a **rate**: `look_*` action strengths become degrees per second, s
 
 Stick deadzone is 0.2 for sticks and 0.5 for triggers-as-buttons. The 0.5 default Godot ships would eat most of a stick's usable travel.
 
+**Vertical look is inverted by default** (`invert_look_y`, exported on the sampler): pushing down raises the aim. The flag applies to mouse and stick together, since both write pitch through one function — split it into two exports if the two devices ever want different answers.
+
 ## Deploy map (mouse-driven)
 
 LMB selects a spawn marker; **Deploy** button (or Enter / A) confirms; M / Esc closes the map *if* currently alive. No keyboard marker navigation in the prototype.
@@ -80,3 +82,4 @@ Under the server-authoritative model (10), these actions are only ever read on t
 - Post-M1: added `toggle_fullscreen` (F11) and four `look_*` actions, and gave every gameplay action an Xbox-layout gamepad binding. The `look_*` actions are gamepad-only — mouse look stays event-driven rather than polled, so it needs no action.
 - Post-M1: no rebinding UI still, but the gamepad layer means the "no rebinding" cost is now higher for a controller player, since stick inversion is a common preference. An `invert_look_y` toggle is the cheap first concession if it comes up.
 - Post-M1: action events must carry `device = -1` ("any device"). Events built in code default to a concrete device id, which silently produces an action that matches nothing (F11) or only the first controller (the gamepad bindings). Anything that generates bindings has to normalise this.
+- Post-M1: `invert_look_y` landed and defaults to **true**. Noted because it inverts the convention most FPS players expect, so it is a deliberate project default rather than an oversight.

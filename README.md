@@ -41,6 +41,7 @@ Keyboard/mouse and an Xbox-layout gamepad both work at once — no mode switch, 
 |---|---|---|
 | Move | `W` `A` `S` `D` | Left stick |
 | Look | Mouse (captured on deploy; `Esc` frees it, click recaptures) | Right stick |
+| | *Vertical look is inverted by default — `invert_look_y` on the sampler* | |
 | Jump | `Space` | `A` |
 | Sprint | `Shift` (forward-ish only) | `L3` |
 | Fire | `LMB` — rifle full-auto, pistol semi-auto | `RT` |

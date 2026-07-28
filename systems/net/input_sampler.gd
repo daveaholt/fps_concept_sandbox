@@ -3,6 +3,7 @@ extends Node
 
 const PITCH_LIMIT := deg_to_rad(89.0)
 
+@export var invert_look_y: bool = true
 @export var mouse_sensitivity_deg_per_px: float = 0.12
 @export var stick_look_speed_deg: float = 200.0
 @export var stick_look_exponent: float = 2.0
@@ -61,7 +62,8 @@ func aim_vector() -> Vector3:
 
 func _add_look(delta_yaw: float, delta_pitch: float) -> void:
 	yaw = wrapf(yaw + delta_yaw, -PI, PI)
-	pitch = clampf(pitch + delta_pitch, -PITCH_LIMIT, PITCH_LIMIT)
+	var applied := -delta_pitch if invert_look_y else delta_pitch
+	pitch = clampf(pitch + applied, -PITCH_LIMIT, PITCH_LIMIT)
 
 
 func _apply_stick_look(delta: float) -> void:
