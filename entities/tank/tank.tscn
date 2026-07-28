@@ -53,7 +53,7 @@ size = Vector3(5, 3, 7.6)
 collision_layer = 4
 mass = 4000.0
 center_of_mass_mode = 1
-center_of_mass = Vector3(0, -0.4, 0)
+center_of_mass = Vector3(0, 0, 0)
 script = ExtResource("1_cbkxa")
 
 [node name="HullShape" type="CollisionShape3D" parent="." unique_id=1986440919]
@@ -69,8 +69,8 @@ wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
 suspension_max_force = 20000.0
-damping_compression = 0.6
-damping_relaxation = 0.8
+damping_compression = 3.0
+damping_relaxation = 4.0
 
 [node name="WheelL1" type="VehicleWheel3D" parent="." unique_id=177097340]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, 0)
@@ -81,8 +81,8 @@ wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
 suspension_max_force = 20000.0
-damping_compression = 0.6
-damping_relaxation = 0.8
+damping_compression = 3.0
+damping_relaxation = 4.0
 
 [node name="WheelL2" type="VehicleWheel3D" parent="." unique_id=1890506069]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, 2)
@@ -93,8 +93,8 @@ wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
 suspension_max_force = 20000.0
-damping_compression = 0.6
-damping_relaxation = 0.8
+damping_compression = 3.0
+damping_relaxation = 4.0
 
 [node name="WheelR0" type="VehicleWheel3D" parent="." unique_id=1052221527]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, -2)
@@ -105,8 +105,8 @@ wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
 suspension_max_force = 20000.0
-damping_compression = 0.6
-damping_relaxation = 0.8
+damping_compression = 3.0
+damping_relaxation = 4.0
 
 [node name="WheelR1" type="VehicleWheel3D" parent="." unique_id=1813351441]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, 0)
@@ -117,8 +117,8 @@ wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
 suspension_max_force = 20000.0
-damping_compression = 0.6
-damping_relaxation = 0.8
+damping_compression = 3.0
+damping_relaxation = 4.0
 
 [node name="WheelR2" type="VehicleWheel3D" parent="." unique_id=700103014]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, 2)
@@ -129,8 +129,8 @@ wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
 suspension_max_force = 20000.0
-damping_compression = 0.6
-damping_relaxation = 0.8
+damping_compression = 3.0
+damping_relaxation = 4.0
 
 [node name="TurretYaw" type="Node3D" parent="." unique_id=1275864586]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -0.2)

@@ -1464,10 +1464,6 @@ outline_size = 16
 
 [node name="Tank" type="VehicleBody3D" parent="Vehicles" unique_id=698796726 instance=ExtResource("19_aj57l")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0.8, 40)
-collision_layer = 4
-mass = 4000.0
-center_of_mass_mode = 1
-center_of_mass = Vector3(0, -0.4, 0)
 script = ExtResource("20_nnn8o")
 
 [node name="DevOverlay" type="CanvasLayer" parent="." unique_id=1324878947]

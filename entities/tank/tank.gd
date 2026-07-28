@@ -12,6 +12,8 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var wheel_friction_slip: float = 3.0
 @export var suspension_rest_length: float = 0.55
 @export var suspension_max_force_n: float = 20000.0
+@export var suspension_damping_compression: float = 3.0
+@export var suspension_damping_relaxation: float = 4.0
 @export var max_yaw_rate: float = 1.35
 @export var yaw_accel: float = 6.0
 
@@ -81,6 +83,8 @@ func _ready() -> void:
 		wheel.wheel_friction_slip = wheel_friction_slip
 		wheel.wheel_rest_length = suspension_rest_length
 		wheel.suspension_max_force = suspension_max_force_n
+		wheel.damping_compression = suspension_damping_compression
+		wheel.damping_relaxation = suspension_damping_relaxation
 		if wheel.position.x < 0.0:
 			_left_wheels.append(wheel)
 		else:
@@ -318,8 +322,10 @@ func _apply_yaw(steer_input: float, authority: float, pivoting: bool, travel: fl
 	var target := -steer_input * rate
 	if not pivoting:
 		target *= travel
-	var blended := move_toward(angular_velocity.y, target, yaw_accel * delta)
-	angular_velocity = Vector3(angular_velocity.x, blended, angular_velocity.z)
+	var up := global_transform.basis.y
+	var spin := angular_velocity.dot(up)
+	var blended := move_toward(spin, target, yaw_accel * delta)
+	angular_velocity += up * (blended - spin)
 
 
 func _grounded_wheels() -> int:
