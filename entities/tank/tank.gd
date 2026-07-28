@@ -27,12 +27,12 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var armour_side: float = 1.25
 @export var armour_rear: float = 2.0
 @export var armour_top: float = 1.5
-@export var deck_height: float = 1.5
+@export var deck_height: float = 1.25
 
 @export var shell_params_id: int = 2
 @export var fire_cooldown_time: float = 2.5
 @export var recoil_impulse: float = 9000.0
-@export var camera_pivot_height: float = 2.1
+@export var camera_pivot_height: float = 1.85
 @export var camera_spring_length: float = 8.0
 @export var camera_pitch_min_deg: float = -8.0
 @export var camera_pitch_max_deg: float = 20.0
@@ -178,11 +178,11 @@ func get_history() -> PositionHistory:
 
 
 func hit_half_extents() -> Vector3:
-	return Vector3(1.7, 0.9, 3.1)
+	return Vector3(1.7, 0.775, 3.1)
 
 
 func hit_centre_y() -> float:
-	return 0.9
+	return 0.775
 
 
 func resolve_sector(world_point: Vector3) -> Dictionary:
