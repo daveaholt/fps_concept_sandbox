@@ -55,6 +55,7 @@ func spawn(origin: Vector3, direction: Vector3, params_id: int, shooter_peer: in
 		return
 	_live.append({
 		"pos": origin,
+		"prev": origin,
 		"vel": direction.normalized() * params.muzzle_velocity,
 		"params_id": params_id,
 		"shooter": shooter_peer,
@@ -65,7 +66,6 @@ func spawn(origin: Vector3, direction: Vector3, params_id: int, shooter_peer: in
 
 func _physics_process(delta: float) -> void:
 	if _live.is_empty():
-		_update_tracers()
 		return
 
 	var survivors: Array[Dictionary] = []
@@ -74,6 +74,7 @@ func _physics_process(delta: float) -> void:
 	for p in _live:
 		var params := params_for(p["params_id"])
 		var from: Vector3 = p["pos"]
+		p["prev"] = from
 		var stepped := Ballistics.step(from, p["vel"], params, _gravity, delta)
 		var to: Vector3 = stepped["pos"]
 
@@ -90,7 +91,10 @@ func _physics_process(delta: float) -> void:
 			survivors.append(p)
 
 	_live = survivors
-	_update_tracers()
+
+
+func _process(_delta: float) -> void:
+	_update_tracers(Engine.get_physics_interpolation_fraction())
 
 
 func _now() -> float:
@@ -208,7 +212,7 @@ func _build_tracers() -> void:
 	add_child(holder)
 
 
-func _update_tracers() -> void:
+func _update_tracers(fraction: float) -> void:
 	if _multimesh == null:
 		return
 	var count := mini(_live.size(), MAX_PROJECTILES)
@@ -217,7 +221,10 @@ func _update_tracers() -> void:
 		var p := _live[i]
 		var vel: Vector3 = p["vel"]
 		var params := params_for(p["params_id"])
-		var length := minf(params.tracer_length, vel.length() * 0.02)
+		var head: Vector3 = (p["prev"] as Vector3).lerp(p["pos"], clampf(fraction, 0.0, 1.0))
 		var direction := vel.normalized() if vel.length_squared() > 0.001 else Vector3.FORWARD
-		var basis := Basis().looking_at(direction, Vector3.UP).scaled(Vector3(1, 1, maxf(length, 0.5)))
-		_multimesh.set_instance_transform(i, Transform3D(basis, p["pos"]))
+		if absf(direction.dot(Vector3.UP)) > 0.999:
+			direction = (direction + Vector3(0.001, 0.0, 0.0)).normalized()
+		var length := maxf(minf(params.tracer_length, vel.length() * 0.02), 0.5)
+		var basis := Basis.looking_at(direction, Vector3.UP).scaled(Vector3(1, 1, length))
+		_multimesh.set_instance_transform(i, Transform3D(basis, head - direction * length * 0.5))

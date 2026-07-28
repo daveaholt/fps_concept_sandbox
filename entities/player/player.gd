@@ -53,6 +53,8 @@ func _ready() -> void:
 	var visual := get_node_or_null("Visual")
 	if visual != null:
 		_visual_meshes = visual.find_children("*", "VisualInstance3D", true, false)
+	if _muzzle_flash != null:
+		_visual_meshes.append(_muzzle_flash)
 	_set_visual_layer(WORLD_VISIBLE_LAYER)
 
 	if _is_server():
