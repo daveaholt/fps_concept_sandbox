@@ -3,6 +3,7 @@ extends Node
 const PLAYER_SCENE_PATH := "res://entities/player/player.tscn"
 const RESPAWN_DELAY := 2.0
 const MAX_BUFFERED_COMMANDS := 16
+const SPAWN_SPREAD := 2.2
 
 signal server_started(port: int)
 signal peer_joined(peer_id: int)
@@ -120,19 +121,24 @@ func deploy(peer_id: int) -> Node:
 	if _player_scene == null:
 		_player_scene = load(PLAYER_SCENE_PATH)
 
+	var slot := _possession.size()
+	var angle := TAU * float(slot) / float(NetCli.MAX_PEERS)
+	var offset := Vector3(cos(angle), 0.0, sin(angle)) * SPAWN_SPREAD if slot > 0 else Vector3.ZERO
+	var origin := point.global_position + offset
+
 	var entity := _player_scene.instantiate()
 	entity.name = "Player_%d" % peer_id
 	entity.owner_peer = peer_id
-	entity.position = point.global_position
+	entity.position = origin
 	_spawn_root.add_child(entity, true)
-	entity.state.position = point.global_position
+	entity.state.position = origin
 	entity.died.connect(entity_died)
 
 	_possession[peer_id] = entity
 	_last_processed[peer_id] = 0
 	_starved[peer_id] = 0
 	print("[server] peer %d deployed at %s %v (%d entities)"
-		% [peer_id, point.display_name, point.global_position, _possession.size()])
+		% [peer_id, point.display_name, origin, _possession.size()])
 
 	if peer_id != 1:
 		GameClient.grant_possession.rpc_id(peer_id, entity.name)

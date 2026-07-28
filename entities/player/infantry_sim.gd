@@ -152,27 +152,27 @@ static func _collide_and_slide(from: Vector3, motion: Vector3, tuning: InfantryT
 
 static func _probe_floor(from: Vector3, tuning: InfantryTuning, space: PhysicsDirectSpaceState3D) -> Dictionary:
 	var airborne := {"on_floor": false, "normal": Vector3.UP, "position": from}
-	var params := _query_for(tuning)
-	var lift := tuning.floor_probe_lift
-	var drop := Vector3.DOWN * (lift + tuning.floor_snap_distance)
-	var start := from + Vector3.UP * lift
 
-	params.transform = Transform3D(Basis(), _shape_origin(start, tuning))
-	params.motion = drop
-	var fractions := space.cast_motion(params)
-	if fractions.size() < 2 or fractions[0] >= 1.0:
+	var ray := PhysicsRayQueryParameters3D.create(
+		from + Vector3.UP * tuning.floor_probe_lift,
+		from + Vector3.DOWN * tuning.floor_snap_distance)
+	ray.collision_mask = tuning.collision_mask
+	var hit := space.intersect_ray(ray)
+	if hit.is_empty():
 		return airborne
 
-	var landed := start + drop * fractions[0]
-	params.transform = Transform3D(Basis(), _shape_origin(landed + Vector3.DOWN * tuning.skin_width * 1.5, tuning))
-	params.motion = Vector3.ZERO
-	var rest := space.get_rest_info(params)
-
-	var normal: Vector3 = rest.get("normal", Vector3.UP) if not rest.is_empty() else Vector3.UP
+	var normal: Vector3 = hit.get("normal", Vector3.UP)
 	if rad_to_deg(normal.angle_to(Vector3.UP)) > tuning.floor_max_angle_deg:
 		return {"on_floor": false, "normal": normal, "position": from}
 
-	return {"on_floor": true, "normal": normal, "position": landed}
+	var contact: Vector3 = hit["position"]
+	var cosine := maxf(normal.dot(Vector3.UP), 0.001)
+	var rest_height := tuning.capsule_radius * (1.0 / cosine - 1.0)
+	return {
+		"on_floor": true,
+		"normal": normal,
+		"position": Vector3(from.x, contact.y + rest_height, from.z),
+	}
 
 
 static func _resolve_penetration(from: Vector3, tuning: InfantryTuning,

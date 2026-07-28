@@ -6,6 +6,9 @@ signal died(entity: Node)
 @export var eye_height: float = 1.6
 @export var muzzle_flash_time: float = 0.045
 
+const WORLD_VISIBLE_LAYER := 1
+const OWN_BODY_LAYER := 2
+
 var state: InfantryState = InfantryState.new()
 var owner_peer: int = 0
 
@@ -14,6 +17,7 @@ var _camera: Camera3D
 var _interact_ray: RayCast3D
 var _muzzle_flash: MeshInstance3D
 var _visual_weapon: Node3D
+var _visual_meshes: Array = []
 
 var _pending: Array[InputCommand] = []
 var _last_command: InputCommand = InputCommand.new()
@@ -21,9 +25,11 @@ var _aim: Vector3 = Vector3.FORWARD
 var _shots_seen: int = 0
 var _flash_timer: float = 0.0
 var _possessed: bool = false
+var _server_authority: bool = true
 
 
 func _ready() -> void:
+	_server_authority = multiplayer.multiplayer_peer == null or multiplayer.is_server()
 	add_to_group("controllable")
 	add_to_group("infantry")
 
@@ -33,6 +39,16 @@ func _ready() -> void:
 	_muzzle_flash = get_node_or_null("Head/Muzzle/Flash")
 	_visual_weapon = get_node_or_null("Visual/WeaponProxy")
 
+	var visual := get_node_or_null("Visual")
+	if visual != null:
+		_visual_meshes = visual.find_children("*", "VisualInstance3D", true, false)
+	_set_visual_layer(WORLD_VISIBLE_LAYER)
+
+	if _is_server():
+		physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON
+	else:
+		physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
 	if tuning == null:
 		tuning = InfantryTuning.new()
 	tuning.gravity = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
@@ -40,6 +56,9 @@ func _ready() -> void:
 	state.position = global_position
 	_shots_seen = state.shots_fired
 	_set_flash_visible(false)
+	if _camera != null:
+		_camera.current = false
+	reset_physics_interpolation()
 
 
 func get_display_name() -> String:
@@ -48,14 +67,21 @@ func get_display_name() -> String:
 
 func possess() -> void:
 	_possessed = true
+	_set_visual_layer(OWN_BODY_LAYER)
 	if _camera != null:
 		_camera.current = true
 
 
 func unpossess() -> void:
 	_possessed = false
+	_set_visual_layer(WORLD_VISIBLE_LAYER)
 	if _camera != null:
 		_camera.current = false
+
+
+func _set_visual_layer(layer_bits: int) -> void:
+	for node in _visual_meshes:
+		node.layers = layer_bits
 
 
 func is_possessed() -> bool:
@@ -114,22 +140,23 @@ func apply_damage(amount: float) -> void:
 
 
 func _is_server() -> bool:
-	if multiplayer.multiplayer_peer == null:
-		return true
-	return multiplayer.is_server()
+	return _server_authority
 
 
 func _physics_process(delta: float) -> void:
-	if _is_server():
-		var cmd := _next_command()
-		state = InfantrySim.simulate(state, cmd, tuning, get_world_3d().direct_space_state, delta)
-		_aim = cmd.aim
-		global_position = state.position
-		velocity = state.velocity
+	if not _is_server():
+		return
+	var cmd := _next_command()
+	state = InfantrySim.simulate(state, cmd, tuning, get_world_3d().direct_space_state, delta)
+	_aim = cmd.aim
+	global_position = state.position
+	velocity = state.velocity
+	_apply_pose(delta)
 
 
 func _process(delta: float) -> void:
-	_apply_pose(delta)
+	if not _is_server():
+		_apply_pose(delta)
 
 
 func _next_command() -> InputCommand:
