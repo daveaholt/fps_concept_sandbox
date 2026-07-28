@@ -259,6 +259,11 @@ func _net_log(delta: float) -> void:
 	if _log_countdown > 0.0:
 		return
 	_log_countdown = 1.0
+	if GameServer.is_active and GameServer.ballistics != null:
+		print("[ball] live=%d hits=%d targets_registered=%d"
+			% [GameServer.ballistics.live_count(), GameServer.ballistics.hits_logged,
+				GameServer.get_entity_count()])
+		return
 	print("[net] snapshots=%d rate=%.1f/s buffer=%d lag=%.1ft reorder=%d resync=%d acked=%d entities=%d dropped=%d"
 		% [buffer.received, buffer.received / maxf(_uptime, 0.001), buffer.depth(), buffer.lag_ticks(),
 			buffer.out_of_order, buffer.resyncs, _acked_tick,

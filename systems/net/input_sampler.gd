@@ -92,12 +92,13 @@ func _apply_stick_look(delta: float) -> void:
 
 func _bot_command() -> InputCommand:
 	pitch = 0.0
+	var buttons := InputCommand.FIRE if NetCli.is_bot_firing() else 0
 	if NetCli.is_bot_wall():
 		yaw = PI
-		return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
+		return InputCommand.make(tick, Vector2(0.0, 1.0), buttons, aim_vector())
 	var phase := float(tick) / float(NetCli.TICK_RATE)
 	yaw = wrapf(phase * 1.6, -PI, PI)
-	return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
+	return InputCommand.make(tick, Vector2(0.0, 1.0), buttons, aim_vector())
 
 
 func _move_vector() -> Vector2:
