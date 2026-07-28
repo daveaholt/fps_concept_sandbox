@@ -275,18 +275,20 @@ func _drive(throttle: float, steer_input: float, braking: bool, delta: float) ->
 	var governor := clampf(1.0 - speed / maxf(max_speed, 0.001), 0.0, 1.0)
 
 	var pivoting := absf(throttle) < 0.05 and absf(steer_input) > 0.05
+	var travel := _travel_direction(throttle)
 	var left := 0.0
 	var right := 0.0
 	if pivoting:
 		left = steer_input * pivot_force
 		right = -steer_input * pivot_force
 	else:
-		left = -(throttle + steer_input * authority) * max_engine_force * governor
-		right = -(throttle - steer_input * authority) * max_engine_force * governor
+		var inside := steer_input * authority * travel
+		left = -(throttle + inside) * max_engine_force * governor
+		right = -(throttle - inside) * max_engine_force * governor
 
 	_apply_side(_left_wheels, left)
 	_apply_side(_right_wheels, right)
-	_apply_yaw(steer_input, authority, pivoting, delta)
+	_apply_yaw(steer_input, authority, pivoting, travel, delta)
 
 	var braking_force := brake_force if braking else 0.0
 	if not braking and absf(throttle) < 0.05 and absf(steer_input) < 0.05:
@@ -295,11 +297,23 @@ func _drive(throttle: float, steer_input: float, braking: bool, delta: float) ->
 		wheel.brake = braking_force
 
 
-func _apply_yaw(steer_input: float, authority: float, pivoting: bool, delta: float) -> void:
+func _travel_direction(throttle: float) -> float:
+	var along := linear_velocity.dot(-global_transform.basis.z)
+	if absf(along) > 0.5:
+		return signf(along)
+	if absf(throttle) > 0.05:
+		return signf(throttle)
+	return 1.0
+
+
+func _apply_yaw(steer_input: float, authority: float, pivoting: bool, travel: float,
+		delta: float) -> void:
 	if absf(steer_input) < 0.05 or _grounded_wheels() == 0:
 		return
 	var rate := max_yaw_rate if pivoting else max_yaw_rate * authority
 	var target := -steer_input * rate
+	if not pivoting:
+		target *= travel
 	var blended := move_toward(angular_velocity.y, target, yaw_accel * delta)
 	angular_velocity = Vector3(angular_velocity.x, blended, angular_velocity.z)
 
