@@ -5,9 +5,13 @@ signal died(entity: Node)
 @export var tuning: InfantryTuning
 @export var eye_height: float = 1.6
 @export var muzzle_flash_time: float = 0.045
+@export var error_smoothing_tau: float = 0.035
 
 const WORLD_VISIBLE_LAYER := 1
 const OWN_BODY_LAYER := 2
+const MAX_SMOOTHED_ERROR := 2.0
+
+enum Role { SERVER, PREDICTED, REMOTE }
 
 var state: InfantryState = InfantryState.new()
 var owner_peer: int = 0
@@ -26,10 +30,13 @@ var _shots_seen: int = 0
 var _flash_timer: float = 0.0
 var _possessed: bool = false
 var _server_authority: bool = true
+var role: Role = Role.REMOTE
+var _visual_error: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
 	_server_authority = multiplayer.multiplayer_peer == null or multiplayer.is_server()
+	role = Role.SERVER if _server_authority else Role.REMOTE
 	add_to_group("controllable")
 	add_to_group("infantry")
 
@@ -67,6 +74,8 @@ func get_display_name() -> String:
 
 func possess() -> void:
 	_possessed = true
+	if role != Role.SERVER:
+		role = Role.PREDICTED
 	_set_visual_layer(OWN_BODY_LAYER)
 	if _camera != null:
 		_camera.current = true
@@ -74,6 +83,8 @@ func possess() -> void:
 
 func unpossess() -> void:
 	_possessed = false
+	if role == Role.PREDICTED:
+		role = Role.REMOTE
 	_set_visual_layer(WORLD_VISIBLE_LAYER)
 	if _camera != null:
 		_camera.current = false
@@ -114,14 +125,51 @@ func get_active_weapon() -> WeaponDef:
 func get_net_state() -> Dictionary:
 	return {
 		"p": state.position,
+		"v": state.velocity,
 		"a": _aim,
 		"w": state.weapon_index,
 		"h": state.health,
 		"s": state.shots_fired,
+		"f": state.on_floor,
+		"sp": state.switch_progress,
+		"fc": state.fire_cooldown,
+		"pb": state.prev_buttons,
 	}
 
 
+func authoritative_state_from(net_state: Dictionary) -> InfantryState:
+	var s := InfantryState.new()
+	s.position = net_state.get("p", Vector3.ZERO)
+	s.velocity = net_state.get("v", Vector3.ZERO)
+	s.on_floor = net_state.get("f", false)
+	s.health = net_state.get("h", 100.0)
+	s.weapon_index = net_state.get("w", 0)
+	s.switch_progress = net_state.get("sp", 1.0)
+	s.fire_cooldown = net_state.get("fc", 0.0)
+	s.prev_buttons = net_state.get("pb", 0)
+	s.shots_fired = net_state.get("s", 0)
+	return s
+
+
+func set_predicted_state(next: InfantryState, aim: Vector3) -> void:
+	state = next
+	_aim = aim
+
+
+func add_visual_error(error: Vector3) -> void:
+	if error.length() > MAX_SMOOTHED_ERROR:
+		_visual_error = Vector3.ZERO
+		return
+	_visual_error += error
+
+
+func get_visual_error() -> float:
+	return _visual_error.length()
+
+
 func apply_replicated_state(net_state: Dictionary) -> void:
+	if role == Role.PREDICTED:
+		return
 	state.position = net_state.get("p", state.position)
 	state.weapon_index = net_state.get("w", state.weapon_index)
 	state.health = net_state.get("h", state.health)
@@ -144,7 +192,7 @@ func _is_server() -> bool:
 
 
 func _physics_process(delta: float) -> void:
-	if not _is_server():
+	if role != Role.SERVER:
 		return
 	var cmd := _next_command()
 	state = InfantrySim.simulate(state, cmd, tuning, get_world_3d().direct_space_state, delta)
@@ -155,7 +203,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
-	if not _is_server():
+	if role != Role.SERVER:
 		_apply_pose(delta)
 
 
@@ -169,6 +217,13 @@ func _apply_pose(delta: float) -> void:
 	var forward := InfantrySim.flat_forward(_aim)
 	var yaw := atan2(-forward.x, -forward.z)
 	var pitch := asin(clampf(_aim.y, -1.0, 1.0))
+
+	if role != Role.REMOTE:
+		if _visual_error.length_squared() > 0.0000001:
+			_visual_error = _visual_error.lerp(Vector3.ZERO, 1.0 - exp(-delta / maxf(error_smoothing_tau, 0.001)))
+		else:
+			_visual_error = Vector3.ZERO
+		global_position = state.position + _visual_error
 
 	rotation.y = yaw
 	if _head != null:

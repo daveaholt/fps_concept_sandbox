@@ -19,6 +19,7 @@ var sampler: InputSampler = null
 var window: WindowMode = null
 var shim: NetShim = null
 var buffer := SnapshotBuffer.new()
+var prediction := PredictionBuffer.new()
 
 var _address: String = ""
 var _port: int = 0
@@ -30,6 +31,8 @@ var _acked_tick: int = 0
 var _log_countdown: float = 1.0
 var _uptime: float = 0.0
 var _peer_id: int = 0
+var _pending_auth: Dictionary = {}
+var _pending_auth_tick: int = 0
 
 
 func _ready() -> void:
@@ -100,6 +103,48 @@ func _connect_to(address: String, port: int) -> void:
 	print("[client] connecting to %s:%d ..." % [address, port])
 
 
+func is_predicting() -> bool:
+	return my_entity != null and is_instance_valid(my_entity) 		and my_entity.role == my_entity.Role.PREDICTED
+
+
+func _physics_process(delta: float) -> void:
+	if sampler == null or my_entity == null or not is_instance_valid(my_entity):
+		return
+
+	_reconcile(delta)
+	var cmd := sampler.build_command(delta)
+	if is_predicting():
+		_predict(cmd, delta)
+	send_command(cmd)
+
+
+func _predict(cmd: InputCommand, delta: float) -> void:
+	var entity := my_entity
+	var space := (entity as Node3D).get_world_3d().direct_space_state
+	var next := InfantrySim.simulate(entity.state, cmd, entity.tuning, space, delta)
+	entity.set_predicted_state(next, cmd.aim)
+	prediction.push(cmd.tick, cmd, next.clone())
+
+
+func _reconcile(delta: float) -> void:
+	if _pending_auth.is_empty() or not is_predicting():
+		_pending_auth = {}
+		return
+
+	var entity := my_entity
+	var authoritative: InfantryState = entity.authoritative_state_from(_pending_auth)
+	var acked := _pending_auth_tick
+	_pending_auth = {}
+
+	var space := (entity as Node3D).get_world_3d().direct_space_state
+	var result := prediction.reconcile(acked, authoritative, entity.tuning, space, delta)
+	if not result.get("corrected", false):
+		return
+
+	entity.set_predicted_state(result["state"], sampler.aim_vector())
+	entity.add_visual_error(result["error"])
+
+
 func send_command(cmd: InputCommand) -> void:
 	_outbox.append(cmd)
 	while _outbox.size() > NetCli.COMMAND_REDUNDANCY:
@@ -136,6 +181,13 @@ func _accept_snapshot(snapshot: Dictionary) -> void:
 	var acks: Dictionary = snapshot.get("acks", {})
 	_acked_tick = acks.get(get_peer_id(), _acked_tick)
 
+	if not is_predicting():
+		return
+	var entities: Dictionary = snapshot.get("entities", {})
+	if entities.has(my_entity.name):
+		_pending_auth = entities[my_entity.name]
+		_pending_auth_tick = _acked_tick
+
 
 @rpc("authority", "call_remote", "reliable")
 func grant_possession(entity_name: String) -> void:
@@ -168,7 +220,11 @@ func _process(delta: float) -> void:
 	if _pending_entity_name != "":
 		_bind_pending()
 
-	if GameServer.is_active or _players_root == null:
+	if _players_root == null:
+		return
+	if GameServer.is_active:
+		_uptime += delta
+		_net_log(delta)
 		return
 
 	_uptime += delta
@@ -194,6 +250,10 @@ func _net_log(delta: float) -> void:
 			buffer.out_of_order, buffer.resyncs, _acked_tick,
 			_players_root.get_child_count() if _players_root != null else 0,
 			shim.dropped if shim != null else 0])
+	if is_predicting():
+		print("[pred] pending=%d corrections=%d replayed=%d last_error=%.4fm visual_error=%.4fm"
+			% [prediction.depth(), prediction.corrections, prediction.replayed_commands,
+				prediction.last_error, my_entity.get_visual_error()])
 
 
 func _trace(states: Dictionary) -> void:
@@ -224,6 +284,7 @@ func set_my_entity(entity: Node) -> void:
 
 	my_entity = entity
 
+	prediction.clear()
 	if my_entity != null and my_entity.has_method("possess"):
 		my_entity.possess()
 		if sampler != null:

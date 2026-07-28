@@ -32,7 +32,11 @@ static func is_net_log() -> bool:
 
 
 static func is_bot() -> bool:
-	return all_args().has("--bot")
+	return all_args().has("--bot") or all_args().has("--bot-wall")
+
+
+static func is_bot_wall() -> bool:
+	return all_args().has("--bot-wall")
 
 
 static func is_net_trace() -> bool:

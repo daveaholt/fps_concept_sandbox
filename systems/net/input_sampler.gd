@@ -60,6 +60,18 @@ func aim_vector() -> Vector3:
 	return Vector3(-sin(yaw) * cp, sin(pitch), -cos(yaw) * cp)
 
 
+func build_command(delta: float) -> InputCommand:
+	tick += 1
+	if NetCli.is_bot():
+		return _bot_command()
+
+	_apply_stick_look(delta)
+	var cmd := InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector())
+	_latched_buttons = 0
+	_poll_dev_keys()
+	return cmd
+
+
 func _add_look(delta_yaw: float, delta_pitch: float) -> void:
 	yaw = wrapf(yaw + delta_yaw, -PI, PI)
 	var applied := -delta_pitch if invert_look_y else delta_pitch
@@ -78,27 +90,13 @@ func _apply_stick_look(delta: float) -> void:
 	_add_look(-shaped.x * rate, -shaped.y * rate)
 
 
-func _physics_process(delta: float) -> void:
-	if not has_focus():
-		_latched_buttons = 0
-		return
-
-	tick += 1
-	if NetCli.is_bot():
-		GameClient.send_command(_bot_command())
-		return
-
-	_apply_stick_look(delta)
-	var cmd := InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector())
-	_latched_buttons = 0
-	GameClient.send_command(cmd)
-	_poll_dev_keys()
-
-
 func _bot_command() -> InputCommand:
+	pitch = 0.0
+	if NetCli.is_bot_wall():
+		yaw = PI
+		return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
 	var phase := float(tick) / float(NetCli.TICK_RATE)
 	yaw = wrapf(phase * 1.6, -PI, PI)
-	pitch = 0.0
 	return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
 
 
