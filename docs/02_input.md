@@ -45,7 +45,7 @@ Revised at M6 to a flight-game pad layout. The cyclic moved to the **right** sti
 | Action | Keyboard / mouse | Gamepad | Notes |
 |---|---|---|---|
 | `heli_collective_up` / `_down` | Space / Ctrl | RT / LT | Lift |
-| `heli_pitch_up` / `_down` | W / S | Right stick Y | Cyclic pitch |
+| `heli_pitch_down` / `_up` | W / S | Right stick Y | Cyclic pitch. **Stick forward and W are nose down**, flight-stick convention |
 | `heli_roll_left` / `_right` | A / D | Right stick X | Cyclic roll |
 | `heli_yaw_left` / `_right` | Q / E | Left stick X | Pedals |
 | `toggle_camera` | V | R3 | Cockpit ↔ chase cam |
