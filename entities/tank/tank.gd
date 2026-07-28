@@ -7,9 +7,11 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var steer_authority_low: float = 0.6
 @export var steer_authority_high: float = 0.25
 @export var max_speed: float = 14.0
-@export var brake_force: float = 200.0
-@export var idle_brake: float = 90.0
+@export var brake_force: float = 900.0
+@export var idle_brake: float = 350.0
 @export var wheel_friction_slip: float = 3.0
+@export var suspension_rest_length: float = 0.55
+@export var suspension_max_force_n: float = 20000.0
 @export var max_yaw_rate: float = 1.35
 @export var yaw_accel: float = 6.0
 
@@ -77,6 +79,8 @@ func _ready() -> void:
 
 	for wheel in find_children("*", "VehicleWheel3D", true, false):
 		wheel.wheel_friction_slip = wheel_friction_slip
+		wheel.wheel_rest_length = suspension_rest_length
+		wheel.suspension_max_force = suspension_max_force_n
 		if wheel.position.x < 0.0:
 			_left_wheels.append(wheel)
 		else:

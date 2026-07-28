@@ -36,7 +36,7 @@ roughness = 0.9
 
 [sub_resource type="BoxMesh" id="BoxMesh_htklb"]
 material = SubResource("StandardMaterial3D_1x70j")
-size = Vector3(0.7, 0.8, 6.2)
+size = Vector3(0.7, 1.0, 6.2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ckajw"]
 albedo_color = Color(0.15, 0.15, 0.16, 1)
@@ -44,7 +44,7 @@ roughness = 0.9
 
 [sub_resource type="BoxMesh" id="BoxMesh_yxiug"]
 material = SubResource("StandardMaterial3D_ckajw")
-size = Vector3(0.7, 0.8, 6.2)
+size = Vector3(0.7, 1.0, 6.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_3oten"]
 size = Vector3(5, 3, 7.6)
@@ -65,8 +65,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, -2)
 use_as_traction = true
 wheel_radius = 0.45
 wheel_friction_slip = 3.0
+wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
+suspension_max_force = 20000.0
 damping_compression = 0.6
 damping_relaxation = 0.8
 
@@ -75,8 +77,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, 0)
 use_as_traction = true
 wheel_radius = 0.45
 wheel_friction_slip = 3.0
+wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
+suspension_max_force = 20000.0
 damping_compression = 0.6
 damping_relaxation = 0.8
 
@@ -85,8 +89,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, 2)
 use_as_traction = true
 wheel_radius = 0.45
 wheel_friction_slip = 3.0
+wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
+suspension_max_force = 20000.0
 damping_compression = 0.6
 damping_relaxation = 0.8
 
@@ -95,8 +101,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, -2)
 use_as_traction = true
 wheel_radius = 0.45
 wheel_friction_slip = 3.0
+wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
+suspension_max_force = 20000.0
 damping_compression = 0.6
 damping_relaxation = 0.8
 
@@ -105,8 +113,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, 0)
 use_as_traction = true
 wheel_radius = 0.45
 wheel_friction_slip = 3.0
+wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
+suspension_max_force = 20000.0
 damping_compression = 0.6
 damping_relaxation = 0.8
 
@@ -115,8 +125,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, 2)
 use_as_traction = true
 wheel_radius = 0.45
 wheel_friction_slip = 3.0
+wheel_rest_length = 0.55
 suspension_travel = 0.3
 suspension_stiffness = 40.0
+suspension_max_force = 20000.0
 damping_compression = 0.6
 damping_relaxation = 0.8
 
@@ -128,15 +140,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -0.2)
 [node name="Muzzle" type="Marker3D" parent="TurretYaw/CannonPitch" unique_id=1241629848]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.6)
 
-[node name="BarrelVisual" type="Node3D" parent="TurretYaw/CannonPitch" unique_id=1156460967]
+[node name="Visual" type="Node3D" parent="TurretYaw/CannonPitch" unique_id=1156460967]
 
-[node name="Barrel" type="MeshInstance3D" parent="TurretYaw/CannonPitch/BarrelVisual" unique_id=1465606855]
+[node name="Barrel" type="MeshInstance3D" parent="TurretYaw/CannonPitch/Visual" unique_id=1465606855]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -1.9)
 mesh = SubResource("BoxMesh_cxr3h")
 
-[node name="TurretVisual" type="Node3D" parent="TurretYaw" unique_id=1672584800]
+[node name="Visual" type="Node3D" parent="TurretYaw" unique_id=1672584800]
 
-[node name="Turret" type="MeshInstance3D" parent="TurretYaw/TurretVisual" unique_id=1626791229]
+[node name="Turret" type="MeshInstance3D" parent="TurretYaw/Visual" unique_id=1626791229]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.3)
 mesh = SubResource("BoxMesh_422qp")
 
@@ -147,11 +159,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 mesh = SubResource("BoxMesh_f0hnj")
 
 [node name="TrackL" type="MeshInstance3D" parent="Visual" unique_id=2039394533]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.55, 0.45, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.55, -0.09, 0)
 mesh = SubResource("BoxMesh_htklb")
 
 [node name="TrackR" type="MeshInstance3D" parent="Visual" unique_id=1830548849]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, 0.45, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, -0.09, 0)
 mesh = SubResource("BoxMesh_yxiug")
 
 [node name="SeatCameraRig" type="Node3D" parent="." unique_id=217722416]
