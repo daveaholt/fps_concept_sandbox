@@ -8,7 +8,6 @@ extends RigidBody3D
 @export var attitude_damping: float = 3.0
 @export var auto_level: float = 0.35
 
-@export var hover_rpm_floor: float = 0.7
 @export var exit_max_speed: float = 2.0
 @export var exit_max_altitude: float = 3.0
 @export var ground_probe_distance: float = 250.0
@@ -85,7 +84,6 @@ func get_display_name() -> String:
 
 func possess() -> void:
 	_possessed = true
-	engine_on = true
 	_chase_active = false
 	_chase_yaw = global_transform.basis.get_euler().y
 	_activate_camera()
@@ -93,7 +91,6 @@ func possess() -> void:
 
 func unpossess() -> void:
 	_possessed = false
-	engine_on = false
 	if _cockpit_camera != null:
 		_cockpit_camera.current = false
 	if _chase_camera != null:
@@ -152,8 +149,12 @@ func collective_fraction() -> float:
 	return collective
 
 
+func hover_rpm_floor() -> float:
+	return sqrt(clampf(mass * 9.8 / maxf(max_lift, 0.001), 0.0, 1.0))
+
+
 func can_hover() -> bool:
-	return rotor_rpm_norm >= hover_rpm_floor
+	return rotor_rpm_norm >= hover_rpm_floor()
 
 
 func altitude_agl() -> float:
@@ -230,6 +231,7 @@ func _physics_process(delta: float) -> void:
 	if driving:
 		_aim = cmd.aim
 
+	engine_on = driving
 	_step_engine(delta)
 	_step_collective(cmd, driving, delta)
 	_apply_rotor_forces(cmd, driving)

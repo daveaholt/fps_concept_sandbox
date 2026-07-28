@@ -67,14 +67,15 @@ func _helicopter_panel() -> void:
 		_entity.altitude_agl(), _entity.climb_rate()]
 
 	var rotor: float = _entity.rotor_fraction()
-	var refusal: String = _entity.exit_refusal()
-	if refusal != "":
-		_weapon_label.text = refusal
-	elif _entity.can_hover():
-		_weapon_label.text = "Rotor %.0f%%   Collective %.0f%%   F — exit" % [
-			rotor * 100.0, _entity.collective_fraction() * 100.0]
+	var gauges := "Rotor %.0f%%   Collective %.0f%%" % [
+		rotor * 100.0, _entity.collective_fraction() * 100.0]
+	if not _entity.can_hover():
+		gauges += "   spooling, cannot lift below %.0f%%" % (_entity.hover_rpm_floor() * 100.0)
+	elif _entity.exit_refusal() != "":
+		gauges += "   %s" % _entity.exit_refusal()
 	else:
-		_weapon_label.text = "Rotor %.0f%% — spooling" % (rotor * 100.0)
+		gauges += "   F — exit"
+	_weapon_label.text = gauges
 
 	_draw_bar.visible = true
 	_draw_bar.value = _entity.collective_fraction() * 100.0
