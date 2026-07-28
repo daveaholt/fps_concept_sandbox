@@ -265,8 +265,5 @@ func _update_tracers(fraction: float) -> void:
 		var params := params_for(p["params_id"])
 		var head: Vector3 = (p["prev"] as Vector3).lerp(p["pos"], clampf(fraction, 0.0, 1.0))
 		var direction := vel.normalized() if vel.length_squared() > 0.001 else Vector3.FORWARD
-		if absf(direction.dot(Vector3.UP)) > 0.999:
-			direction = (direction + Vector3(0.001, 0.0, 0.0)).normalized()
 		var length := maxf(minf(params.tracer_length, vel.length() * 0.02), 0.5)
-		var basis := Basis.looking_at(direction, Vector3.UP).scaled(Vector3(1, 1, length))
-		_multimesh.set_instance_transform(i, Transform3D(basis, head - direction * length * 0.5))
+		_multimesh.set_instance_transform(i, Ballistics.tracer_transform(head, direction, length))

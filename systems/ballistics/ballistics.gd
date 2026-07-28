@@ -10,6 +10,15 @@ static func step(pos: Vector3, vel: Vector3, params: ProjectileParams, gravity: 
 	return {"pos": pos + next_vel * delta, "vel": next_vel}
 
 
+static func tracer_transform(head: Vector3, direction: Vector3, length: float) -> Transform3D:
+	var dir := direction.normalized() if direction.length_squared() > 0.000001 else Vector3.FORWARD
+	if absf(dir.dot(Vector3.UP)) > 0.999:
+		dir = (dir + Vector3(0.001, 0.0, 0.0)).normalized()
+	var aligned := Basis.looking_at(dir, Vector3.UP)
+	var basis := Basis(aligned.x, aligned.y, aligned.z * maxf(length, 0.01))
+	return Transform3D(basis, head - dir * length * 0.5)
+
+
 static func segment_hits_sphere(from: Vector3, to: Vector3, centre: Vector3, radius: float) -> float:
 	var d := to - from
 	var m := from - centre
