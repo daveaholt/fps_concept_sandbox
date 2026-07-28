@@ -8,6 +8,7 @@ const COMPENSATION_DECAY_SECONDS := 0.3
 @export var params_paths: Array[String] = [
 	"res://assets/ballistics/rifle_round.tres",
 	"res://assets/ballistics/pistol_round.tres",
+	"res://assets/ballistics/tank_shell.tres",
 ]
 
 var authoritative: bool = false
@@ -145,6 +146,9 @@ func _target_rids() -> Array[RID]:
 
 
 func _trace_entity(from: Vector3, to: Vector3, target: Node, sample_time: float) -> Dictionary:
+	if target.has_method("resolve_sector"):
+		return _trace_hull(from, to, target)
+
 	var history: PositionHistory = target.get_history()
 	var snap := history.sample(sample_time)
 	if snap.is_empty():
@@ -174,18 +178,56 @@ func _trace_entity(from: Vector3, to: Vector3, target: Node, sample_time: float)
 	}
 
 
-func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectileParams) -> void:
-	var target = impact.get("target")
-	if target == null or not is_instance_valid(target):
-		return
+func _trace_hull(from: Vector3, to: Vector3, target: Node) -> Dictionary:
+	var inverse := (target as Node3D).global_transform.affine_inverse()
+	var centre := Vector3(0.0, target.hit_centre_y(), 0.0)
+	var t := Ballistics.segment_hits_box(inverse * from, inverse * to, centre, target.hit_half_extents())
+	if t < 0.0:
+		return {}
 
+	var point := from.lerp(to, t)
+	var sector: Dictionary = target.resolve_sector(point)
+	return {
+		"t": t,
+		"point": point,
+		"target": target,
+		"zone": sector["sector"],
+		"multiplier": sector["multiplier"],
+	}
+
+
+func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectileParams) -> void:
+	var point: Vector3 = impact.get("point", projectile["pos"])
 	var speed: float = (projectile["vel"] as Vector3).length()
-	var damage: float = params.energy_damage(speed) * float(impact["multiplier"])
-	hits_logged += 1
-	print("[hit] %s zone=%s x%.2f dmg=%.1f speed=%.0fm/s flight=%.3fs rewind=%.3fs"
-		% [target.name, impact["zone"], impact["multiplier"], damage, speed,
-			projectile["time"], _rewind_offset(projectile)])
-	target.apply_damage(damage)
+	var target = impact.get("target")
+
+	if target != null and is_instance_valid(target):
+		var damage: float = params.energy_damage(speed) * float(impact["multiplier"])
+		hits_logged += 1
+		print("[hit] %s zone=%s x%.2f dmg=%.1f speed=%.0fm/s flight=%.3fs rewind=%.3fs"
+			% [target.name, impact["zone"], impact["multiplier"], damage, speed,
+				projectile["time"], _rewind_offset(projectile)])
+		target.apply_damage(damage)
+
+	if params.splash_radius > 0.0:
+		_apply_splash(point, params, target)
+
+
+func _apply_splash(point: Vector3, params: ProjectileParams, direct_target) -> void:
+	for candidate in _targets:
+		if not is_instance_valid(candidate) or candidate == direct_target:
+			continue
+		var distance: float = (candidate as Node3D).global_position.distance_to(point)
+		if distance > params.splash_radius:
+			continue
+		var falloff := 1.0 - distance / params.splash_radius
+		var damage := params.splash_damage * falloff
+		if damage <= 0.0:
+			continue
+		hits_logged += 1
+		print("[splash] %s at %.1fm dmg=%.1f (radius %.1fm)"
+			% [candidate.name, distance, damage, params.splash_radius])
+		candidate.apply_damage(damage)
 
 
 func _build_tracers() -> void:

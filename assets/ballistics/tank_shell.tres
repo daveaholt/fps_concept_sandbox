@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ProjectileParams" format=3]
+
+[ext_resource type="Script" path="res://entities/ballistics/projectile_params.gd" id="1_tkul2"]
+
+[resource]
+script = ExtResource("1_tkul2")
+display_name = "Tank shell"
+muzzle_velocity = 180.0
+drag_k = 0.002
+base_damage = 80.0
+max_lifetime = 8.0
+splash_radius = 4.0
+splash_damage = 45.0
+tracer_length = 9.0
+tracer_colour = Color(1, 0.6, 0.25, 1)

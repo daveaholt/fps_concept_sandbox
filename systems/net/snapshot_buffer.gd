@@ -105,16 +105,20 @@ static func _blend(from_entities: Dictionary, to_entities: Dictionary, t: float)
 			continue
 
 		var from_state: Dictionary = from_entities[key]
-		var aim_t := clampf(t, 0.0, 1.0)
-		var aim: Vector3 = (from_state["a"] as Vector3).lerp(to_state["a"], aim_t)
-		if aim.length_squared() < 0.000001:
-			aim = to_state["a"]
+		var blended := to_state.duplicate()
+		var clamped := clampf(t, 0.0, 1.0)
 
-		out[key] = {
-			"p": (from_state["p"] as Vector3).lerp(to_state["p"], t),
-			"a": aim.normalized(),
-			"w": to_state["w"],
-			"h": to_state["h"],
-			"s": to_state["s"],
-		}
+		if from_state.has("p") and to_state.has("p"):
+			blended["p"] = (from_state["p"] as Vector3).lerp(to_state["p"], t)
+		if from_state.has("a") and to_state.has("a"):
+			var aim: Vector3 = (from_state["a"] as Vector3).lerp(to_state["a"], clamped)
+			blended["a"] = aim.normalized() if aim.length_squared() > 0.000001 else to_state["a"]
+		if from_state.has("q") and to_state.has("q"):
+			blended["q"] = (from_state["q"] as Quaternion).slerp(to_state["q"], clamped)
+		if from_state.has("ty") and to_state.has("ty"):
+			blended["ty"] = lerp_angle(from_state["ty"], to_state["ty"], clamped)
+		if from_state.has("cp") and to_state.has("cp"):
+			blended["cp"] = lerpf(from_state["cp"], to_state["cp"], clamped)
+
+		out[key] = blended
 	return out

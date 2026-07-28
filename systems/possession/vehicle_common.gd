@@ -1,5 +1,5 @@
 class_name VehicleCommon
-extends Node
+extends Node3D
 
 const ENTRY_GROUP := "vehicle_entry"
 
@@ -31,6 +31,8 @@ func distance_to(point: Vector3) -> float:
 
 func pick_exit_transform(space: PhysicsDirectSpaceState3D) -> Transform3D:
 	var owner_node := get_parent() as Node3D
+	if owner_node == null:
+		return global_transform
 	for candidate in [_exit_point, _exit_point_alt]:
 		if candidate == null:
 			continue

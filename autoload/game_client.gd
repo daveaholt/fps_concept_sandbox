@@ -120,6 +120,8 @@ func _physics_process(delta: float) -> void:
 	var cmd := sampler.build_command(delta)
 	if is_predicting():
 		_predict(cmd, delta)
+	elif my_entity.has_method("set_local_aim"):
+		my_entity.set_local_aim(cmd.aim)
 	send_command(cmd)
 
 

@@ -1,7 +1,6 @@
 extends Control
 
 var _entity: Node = null
-var _prompt: String = ""
 
 @onready var _crosshair: Control = $Crosshair
 @onready var _weapon_label: Label = $Bottom/WeaponLabel
@@ -13,6 +12,7 @@ var _prompt: String = ""
 func _ready() -> void:
 	EventBus.possession_changed.connect(_on_possession_changed)
 	EventBus.interaction_prompt.connect(_on_prompt)
+	EventBus.deploy_map_toggled.connect(_on_deploy_map)
 	_on_possession_changed(GameClient.my_entity)
 
 
@@ -21,8 +21,11 @@ func _on_possession_changed(entity: Node) -> void:
 	visible = entity != null
 
 
+func _on_deploy_map(open: bool) -> void:
+	visible = not open and _entity != null
+
+
 func _on_prompt(text: String) -> void:
-	_prompt = text
 	_prompt_label.text = text
 	_prompt_label.visible = text != ""
 
@@ -31,8 +34,18 @@ func _process(_delta: float) -> void:
 	if _entity == null or not is_instance_valid(_entity):
 		visible = false
 		return
+	if GameClient.deploy_map_open:
+		visible = false
+		return
 
 	visible = true
+	if _entity.is_in_group("vehicle"):
+		_vehicle_panel()
+	else:
+		_infantry_panel()
+
+
+func _infantry_panel() -> void:
 	var state: InfantryState = _entity.state
 	_health_label.text = "HP %d" % roundi(state.health)
 
@@ -44,3 +57,15 @@ func _process(_delta: float) -> void:
 	_draw_bar.visible = drawing
 	_draw_bar.value = state.switch_progress * 100.0
 	_crosshair.modulate.a = 0.35 if drawing else 1.0
+
+
+func _vehicle_panel() -> void:
+	_health_label.text = "%s   %.0f km/h" % [_entity.get_display_name(), _entity.speed_kmh()]
+
+	var reload: float = _entity.reload_fraction()
+	_weapon_label.text = "Cannon ready — LMB" if reload >= 1.0 else "Reloading"
+	_draw_bar.visible = reload < 1.0
+	_draw_bar.value = reload * 100.0
+
+	var turret: Vector2 = _entity.turret_angles()
+	_crosshair.modulate.a = 1.0 if absf(turret.x) < 0.05 else 0.5

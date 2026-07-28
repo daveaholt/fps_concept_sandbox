@@ -22,9 +22,6 @@ roughness = 0.9
 material = SubResource("StandardMaterial3D_lx22l")
 size = Vector3(2.4, 0.9, 3)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_3oten"]
-size = Vector3(5, 3, 7.6)
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_17p3m"]
 albedo_color = Color(0.31, 0.35, 0.25, 1)
 roughness = 0.9
@@ -48,6 +45,9 @@ roughness = 0.9
 [sub_resource type="BoxMesh" id="BoxMesh_yxiug"]
 material = SubResource("StandardMaterial3D_ckajw")
 size = Vector3(0.7, 0.8, 6.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3oten"]
+size = Vector3(5, 3, 7.6)
 
 [node name="Tank" type="VehicleBody3D" unique_id=698796726]
 collision_layer = 4
@@ -140,7 +140,31 @@ mesh = SubResource("BoxMesh_cxr3h")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.3)
 mesh = SubResource("BoxMesh_422qp")
 
-[node name="VehicleCommon" type="Node" parent="." unique_id=1878385704]
+[node name="Visual" type="Node3D" parent="." unique_id=1606155374]
+
+[node name="Hull" type="MeshInstance3D" parent="Visual" unique_id=675661695]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("BoxMesh_f0hnj")
+
+[node name="TrackL" type="MeshInstance3D" parent="Visual" unique_id=2039394533]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.55, 0.45, 0)
+mesh = SubResource("BoxMesh_htklb")
+
+[node name="TrackR" type="MeshInstance3D" parent="Visual" unique_id=1830548849]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, 0.45, 0)
+mesh = SubResource("BoxMesh_yxiug")
+
+[node name="SeatCameraRig" type="Node3D" parent="." unique_id=217722416]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="SeatCameraRig" unique_id=1545462201]
+spring_length = 8.0
+margin = 0.4
+
+[node name="Camera3D" type="Camera3D" parent="SeatCameraRig/SpringArm3D" unique_id=507557481]
+cull_mask = 1048573
+far = 2000.0
+
+[node name="VehicleCommon" type="Node3D" parent="." unique_id=1134196244]
 script = ExtResource("2_0syse")
 
 [node name="EntryZone" type="Area3D" parent="VehicleCommon" unique_id=1507308054]
@@ -156,17 +180,3 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.2, 0)
 
 [node name="ExitPointAlt" type="Marker3D" parent="VehicleCommon" unique_id=1260986259]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.2, 0)
-
-[node name="Visual" type="Node3D" parent="." unique_id=1606155374]
-
-[node name="Hull" type="MeshInstance3D" parent="Visual" unique_id=675661695]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("BoxMesh_f0hnj")
-
-[node name="TrackL" type="MeshInstance3D" parent="Visual" unique_id=2039394533]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.55, 0.45, 0)
-mesh = SubResource("BoxMesh_htklb")
-
-[node name="TrackR" type="MeshInstance3D" parent="Visual" unique_id=1830548849]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, 0.45, 0)
-mesh = SubResource("BoxMesh_yxiug")

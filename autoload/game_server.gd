@@ -104,8 +104,20 @@ func get_entity_count() -> int:
 func register_vehicle(vehicle: Node) -> void:
 	if not _vehicles.has(vehicle):
 		_vehicles.append(vehicle)
+		if vehicle.has_signal("fired"):
+			vehicle.fired.connect(_on_vehicle_fired.bind(vehicle))
 	if ballistics != null:
 		ballistics.register_target(vehicle)
+
+
+func _on_vehicle_fired(origin: Vector3, direction: Vector3, params_id: int, vehicle: Node) -> void:
+	if ballistics == null:
+		return
+	var peer_id: int = vehicle.owner_peer
+	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
+	ballistics.spawn(origin, direction, params_id, peer_id, view_delay)
+	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
+		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
 
 
 func get_vehicles() -> Array:

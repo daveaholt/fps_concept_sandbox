@@ -52,3 +52,8 @@ On `possession_changed`, HUD asks the new controllable for `get_display_name()` 
 - Exiting against a wall uses the alternate/topside exit; player is never spawned inside collision.
 - Despawned infantry: no stray capsule left in the world, no orphaned camera claiming `current`.
 - Possession spam (E/F mashing) cannot double-possess or leave `possessed == null` while alive.
+
+## Open questions
+
+- M5: `VehicleCommon` is a **Node3D**, not the plain `Node` the tree above shows. It holds an `Area3D` and two `Marker3D`s, and a plain `Node` has no transform — it severs the 3D hierarchy, so those children sat at the world origin instead of on the hull. The symptom was an exit that placed the player at the marker's *local* offset (3 m from world zero) and an entry zone nowhere near the vehicle. Any helper node holding spatial children has to be spatial itself.
+- M5: exit does not rewind the occupant's position through history; it uses the vehicle's current transform. Fine for the tank and consistent with 05's note that compensation barely applies at shell speeds.
