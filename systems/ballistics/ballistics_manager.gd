@@ -4,6 +4,7 @@ extends Node3D
 const MAX_PROJECTILES := 512
 const WORLD_MASK := 1
 const COMPENSATION_DECAY_SECONDS := 0.3
+const TRACER_BASE_WIDTH := 0.06
 
 @export var params_paths: Array[String] = [
 	"res://assets/ballistics/rifle_round.tres",
@@ -232,15 +233,17 @@ func _apply_splash(point: Vector3, params: ProjectileParams, direct_target) -> v
 
 func _build_tracers() -> void:
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3.ONE
+	mesh.size = Vector3(TRACER_BASE_WIDTH, TRACER_BASE_WIDTH, 1.0)
 	var material := StandardMaterial3D.new()
-	material.vertex_color_use_as_albedo = true
+	material.albedo_color = Color(1.0, 0.85, 0.4)
+	material.emission_enabled = true
+	material.emission = Color(1.0, 0.8, 0.3)
+	material.emission_energy_multiplier = 6.0
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mesh.material = material
 
 	_multimesh = MultiMesh.new()
 	_multimesh.transform_format = MultiMesh.TRANSFORM_3D
-	_multimesh.use_colors = true
 	_multimesh.mesh = mesh
 	_multimesh.instance_count = MAX_PROJECTILES
 	_multimesh.visible_instance_count = 0
@@ -264,6 +267,6 @@ func _update_tracers(fraction: float) -> void:
 		var head: Vector3 = (p["prev"] as Vector3).lerp(p["pos"], clampf(fraction, 0.0, 1.0))
 		var direction := vel.normalized() if vel.length_squared() > 0.001 else Vector3.FORWARD
 		var length := maxf(params.tracer_length, 0.5)
+		var width := maxf(params.tracer_width, 0.001) / TRACER_BASE_WIDTH
 		_multimesh.set_instance_transform(i,
-			Ballistics.tracer_transform(head, direction, length, params.tracer_width))
-		_multimesh.set_instance_color(i, params.tracer_colour)
+			Ballistics.tracer_transform(head, direction, length, width))
