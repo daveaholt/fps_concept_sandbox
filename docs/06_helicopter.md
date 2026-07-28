@@ -30,13 +30,13 @@ Plus `linear_drag` (quadratic-ish via `linear_damp`) so top speed self-limits.
 | Export | Default | Notes |
 |---|---|---|
 | `mass` | 2200 kg | |
-| `max_lift` | 1.35 × m·g | ≈ 29 kN |
+| `max_lift` | ~~1.35~~ **1.55 × m·g** (33500 N) | Raised at M6 for translation authority — see note |
 | `collective_rate` | ~~0.8~~ **1.8 /s** | Tuned at M6; 0.8 took 0.82 s to reach a 3 m/s descent, 1.8 takes 0.57 s |
 | `spool_rate` | 0.25 /s | |
-| `cyclic_torque` | ~~14000~~ **24000 N·m** | Pitch & roll. Tuned at M6 — raises cruise *and* turn response together |
-| `pedal_torque` | ~~9000~~ **20000 N·m** | 9000 gave only 15 deg/s; a 90° turn took six seconds |
+| `cyclic_torque` | ~~14000~~ **24000 N·m** | Now the torque *cap* on the attitude controller, not a raw stick-to-torque gain |
+| `pedal_torque` | ~~9000~~ ~~20000~~ **14000 N·m** | 9000 was 15 deg/s and sluggish, 20000 was 34 deg/s and twitchy; 14000 is 24 deg/s |
 | `attitude_damping` | 3.0 | angular_damp equivalent |
-| `auto_level` | 0.35 | 0 = manual, 1 = self-leveling drone |
+| `auto_level` | ~~0.35~~ **0.85** | Now the *authority* of the attitude controller. 0 still drops to raw torque (manual heli) |
 | `linear_damp` | 0.15 | |
 
 Tuning procedure (do in this order, it converges fast): hover trim (max_lift), then yaw feel, then cyclic authority, then auto_level last.
@@ -81,3 +81,7 @@ Rotor RPM %, collective %, altitude (ray-derived AGL), speed, climb rate, "Land 
 - M6 tuning: the sluggishness had two separate causes and the second one was not where it appeared to be. Yaw was genuinely weak — `pedal_torque` 9000 produced **15 deg/s**, so a 90° turn took six seconds; at 20000 it is 34 deg/s, reached in 0.18 s. Collective was rate-limited: 0.8/s meant **0.82 s** just to wind the lever down to a 3 m/s descent, now 0.57 s at 1.8/s.
 - M6 tuning: but "turns feel slow at speed" was mostly the **flight path lagging the nose**, not the yaw rate — with the nose swinging 116° in the first second, the velocity vector had moved 1°. The obvious lever, `linear_damp`, is a bad trade: it buys turn response by bleeding momentum, and going 0.15 → 1.2 cut the 45° path swing from over 5 s to 3.7 s while halving cruise from 63 to 30 km/h. `cyclic_torque` is the right lever because it lets the pilot point more of the 29 kN where they are going: at 24000 the path swings 45° in **2.9 s** and cruise *rises* to **91 km/h**. Both numbers improve together, which is the tell that it was the correct knob.
 - M6 tuning: `auto_level` needs no re-tune after the cyclic change — its torque is expressed as a fraction of `cyclic_torque`, so the assist scales with the authority it opposes. That was luck rather than design, and is worth keeping if either number moves again.
+- M6: **the cyclic model changed — the stick now commands a bounded tilt angle, not raw torque.** This started as a feel complaint ("way too sensitive") and turned out to be a genuine defect: `auto_level`'s restoring torque grew only linearly with angle, so at full stick it balanced the applied torque at `1 / auto_level` radians — **164°**. Holding the stick tipped the heli past vertical. Measured: full cyclic held for 3 s settled at 110°–176° of tilt. Nothing caught it because every test moved the stick briefly and `verify_m6` only asserted that pitch went *past* a threshold, never that it *stopped* somewhere sane. Cyclic now targets `±max_tilt_deg` (38°) through a proportional controller clamped to `cyclic_torque`, and `verify_m6` asserts the bound exists.
+- M6: with that in place, **rotation rate and translation authority are finally independent knobs**, which is what the tuning actually needed. Peak pitch rate stayed at 34 deg/s across `max_lift` 29100 → 38000 while speed after 3 s went 47 → 62 km/h. Before the change they were welded together through `cyclic_torque`, which is why the previous pass bought acceleration by making the stick twitchy. Shipped: 34 deg/s peak rate, 37.5° steady tilt, 58 km/h after 3 s, stop from cruise in 3.1 s.
+- M6: `auto_level` changed meaning — it is now the authority of the attitude controller rather than a gentle nudge toward level. 0 still falls through to the raw-torque path, so 06's "manual heli for an expert" case survives, but the default 0.85 is a different animal from the old 0.35 nudge. The doc's arcade↔sim knob still spans the same range; the middle of it now means something else.
+- M6: `max_lift` raised 1.35 → 1.55 × m·g. At a bounded 38° tilt only `sin(38°)` of thrust points where you are going, so translation authority is capped by total thrust once the tilt is bounded. Tilt cannot go much past 40° without `cos` starving the vertical component — at 45° full collective can no longer hold altitude — so thrust is the lever, not more tilt.
