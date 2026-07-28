@@ -16,6 +16,7 @@ var is_active: bool = false
 var state: State = State.OFFLINE
 
 var sampler: InputSampler = null
+var window: WindowMode = null
 
 var _address: String = ""
 var _port: int = 0
@@ -49,6 +50,10 @@ func _start_local_systems() -> void:
 	var scanner := InteractionScanner.new()
 	scanner.name = "InteractionScanner"
 	add_child(scanner)
+
+	window = WindowMode.new()
+	window.name = "WindowMode"
+	add_child(window)
 
 
 func _connect_to(address: String, port: int) -> void:

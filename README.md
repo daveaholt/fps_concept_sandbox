@@ -35,17 +35,18 @@ The Godot binary lives at `C:\Godot\Godot_v4.7-stable_win64.exe\Godot_v4.7-stabl
 
 ## Controls
 
-Full binding table lives in `docs/02_input.md`. Currently active (infantry):
+Keyboard/mouse and an Xbox-layout gamepad both work at once — no mode switch, no settings toggle. Full binding table lives in `docs/02_input.md`. Currently active (infantry):
 
-| | |
-|---|---|
-| Move | `W` `A` `S` `D` |
-| Look | Mouse (captured on deploy; `Esc` frees it, click recaptures) |
-| Jump | `Space` |
-| Sprint | `Shift` (forward-ish only) |
-| Fire | `LMB` — rifle is full-auto, pistol semi-auto |
-| Weapons | `1` rifle · `2` pistol · scroll cycles |
-| Dev damage | `K` — 25 damage to yourself, to exercise the death loop |
+| | Keyboard / mouse | Gamepad |
+|---|---|---|
+| Move | `W` `A` `S` `D` | Left stick |
+| Look | Mouse (captured on deploy; `Esc` frees it, click recaptures) | Right stick |
+| Jump | `Space` | `A` |
+| Sprint | `Shift` (forward-ish only) | `L3` |
+| Fire | `LMB` — rifle full-auto, pistol semi-auto | `RT` |
+| Weapons | `1` rifle · `2` pistol · scroll cycles | D-pad up/down · `Y` swaps |
+| Fullscreen | `F11` | — |
+| Dev damage | `K` — 25 damage to yourself, to exercise the death loop | — |
 
 ## Project layout
 
