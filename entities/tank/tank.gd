@@ -10,8 +10,8 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var brake_force: float = 200.0
 @export var idle_brake: float = 90.0
 @export var wheel_friction_slip: float = 3.0
-@export var max_yaw_rate: float = 1.0
-@export var yaw_accel: float = 3.0
+@export var max_yaw_rate: float = 1.35
+@export var yaw_accel: float = 6.0
 
 @export var turret_yaw_speed_deg: float = 60.0
 @export var cannon_pitch_speed_deg: float = 30.0
@@ -281,8 +281,8 @@ func _drive(throttle: float, steer_input: float, braking: bool, delta: float) ->
 		left = steer_input * pivot_force
 		right = -steer_input * pivot_force
 	else:
-		left = (throttle + steer_input * authority) * max_engine_force * governor
-		right = (throttle - steer_input * authority) * max_engine_force * governor
+		left = -(throttle + steer_input * authority) * max_engine_force * governor
+		right = -(throttle - steer_input * authority) * max_engine_force * governor
 
 	_apply_side(_left_wheels, left)
 	_apply_side(_right_wheels, right)

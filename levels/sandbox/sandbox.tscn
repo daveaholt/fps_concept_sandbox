@@ -648,15 +648,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 mesh = SubResource("BoxMesh_sbkki")
 
 [node name="Ramp20" type="MeshInstance3D" parent="Terrain/Visual" unique_id=100362084]
-transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, 38, 3.4202015, 26)
+transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, 38, 2.9502015, 26)
 mesh = SubResource("BoxMesh_ttaci")
 
 [node name="Ramp20Landing" type="MeshInstance3D" parent="Terrain/Visual" unique_id=464051160]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 6.840403, 11.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 6.340403, 11.5)
 mesh = SubResource("BoxMesh_ykedl")
 
 [node name="CrossSlope25" type="MeshInstance3D" parent="Terrain/Visual" unique_id=1799152941]
-transform = Transform3D(0.90630776, -0.42261827, 0, 0.42261827, 0.90630776, 0, 0, 0, 1, 38, 5.0714192, -22)
+transform = Transform3D(0.90630776, -0.42261827, 0, 0.42261827, 0.90630776, 0, 0, 0, 1, 38, 4.618419, -22)
 mesh = SubResource("BoxMesh_cph8y")
 
 [node name="HilltopMass" type="MeshInstance3D" parent="Terrain/Visual" unique_id=1303072706]
@@ -664,7 +664,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 7.5, -45)
 mesh = SubResource("BoxMesh_ky0ov")
 
 [node name="HilltopRamp" type="MeshInstance3D" parent="Terrain/Visual" unique_id=1362152855]
-transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, -58, 7.5, -6.3939195)
+transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, -58, 7.03, -6.3939195)
 mesh = SubResource("BoxMesh_0d6v4")
 
 [node name="HilltopParapetN" type="MeshInstance3D" parent="Terrain/Visual" unique_id=769921051]
@@ -830,15 +830,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 shape = SubResource("BoxShape3D_yhq31")
 
 [node name="Ramp20" type="CollisionShape3D" parent="Terrain" unique_id=1029180104]
-transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, 38, 3.4202015, 26)
+transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, 38, 2.9502015, 26)
 shape = SubResource("BoxShape3D_lke41")
 
 [node name="Ramp20Landing" type="CollisionShape3D" parent="Terrain" unique_id=219710013]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 6.840403, 11.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 6.340403, 11.5)
 shape = SubResource("BoxShape3D_2n56x")
 
 [node name="CrossSlope25" type="CollisionShape3D" parent="Terrain" unique_id=949212609]
-transform = Transform3D(0.90630776, -0.42261827, 0, 0.42261827, 0.90630776, 0, 0, 0, 1, 38, 5.0714192, -22)
+transform = Transform3D(0.90630776, -0.42261827, 0, 0.42261827, 0.90630776, 0, 0, 0, 1, 38, 4.618419, -22)
 shape = SubResource("BoxShape3D_avt3e")
 
 [node name="SlopeSigns" type="Node3D" parent="Terrain" unique_id=1132011914]
@@ -866,7 +866,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 7.5, -45)
 shape = SubResource("BoxShape3D_hmctv")
 
 [node name="HilltopRamp" type="CollisionShape3D" parent="Terrain" unique_id=1258182122]
-transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, -58, 7.5, -6.3939195)
+transform = Transform3D(1, 0, 0, 0, 0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, -58, 7.03, -6.3939195)
 shape = SubResource("BoxShape3D_1nae8")
 
 [node name="HilltopParapetN" type="CollisionShape3D" parent="Terrain" unique_id=813584752]
