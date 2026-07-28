@@ -31,7 +31,7 @@ right_force = (throttle - steer * steer_authority) * max_engine_force
 | `pivot_force` | ~~4000~~ **10000 N** | Neutral-steer force per side |
 | `max_yaw_rate` / `yaw_accel` | ~~1.0 · 3.0~~ **1.35 rad/s · 25 rad/s²** | Target yaw rate, and the acceleration cap on the torque used to reach it — see below |
 | `yaw_inertia` | **16667 kg·m²** | **New.** Hull I(yy); converts the wanted angular acceleration into a torque |
-| `steer_authority` | 0.6 → 0.25 | Lerped from 0 to `max_speed` |
+| `steer_authority` | 0.6 → ~~0.25~~ **0.45** | Lerped from 0 to `max_speed`. The high end must stay under the low end or turns tighten with speed |
 | `max_speed` | 14 m/s | ~50 km/h |
 | `brake_force` / `idle_brake` | ~~60 / 8~~ ~~200 / 90~~ **900 / 350** | Godot brake units per wheel; raised again once the hull stopped dragging — see suspension note |
 | `wheel_suspension_stiffness` | 40.0 | Firm; it's a tank |
@@ -39,7 +39,7 @@ right_force = (throttle - steer * steer_authority) * max_engine_force
 | `wheel_suspension_travel` | 0.3 m | |
 | `suspension_rest_length` | **0.55 m** | **New.** Sets ride height; 0.59 m of hull clearance puts the belly above low obstacles |
 | `suspension_max_force_n` | **20000 N** | **New.** Per wheel. Godot's 6000 default cannot hold this tank up — see note below |
-| `wheel_friction_slip` | 3.0 | High grip; treads shouldn't drift |
+| `wheel_friction_slip` | ~~3.0~~ **2.0** | Lowered to cut lateral scrub in turns; recovers turn rate *and* speed together |
 | `mass` | 4000 kg | Keep ratio to engine force sane |
 | `center_of_mass` | ~~(0, −0.4, 0)~~ **(0, 0, 0)** | −0.4 sat 0.19 m above the contact patch and pitched the nose down in every turn; 0 still gives a ~70° tip angle |
 
@@ -68,7 +68,7 @@ Hull physics is server-simulated and interpolated even for the driver (~RTT + bu
 
 ## Camera
 
-ChaseCam (see 04): spring length 8 m, pivot 2.5 m above hull, pitch clamp −10°…+60°. Mouse orbits freely; hull orientation does not drag the camera (turret-follows-camera scheme requires a free camera).
+ChaseCam (see 04): spring length ~~8 m~~ **7 m**, pivot ~~2.5 m~~ **2.1 m** above hull, pitch clamp ~~−10°…+60°~~ **−8°…+15°**. Mouse orbits freely; hull orientation does not drag the camera (turret-follows-camera scheme requires a free camera). The clamp is now tied to the gun rather than chosen for the camera — see the tuning note.
 
 ## HUD (possessed)
 
@@ -104,3 +104,5 @@ What does work is driving `angular_velocity.y` toward a target rate: 0.887 rad/s
 - Post-M5: **yaw is now a torque, not a written `angular_velocity`.** Setting `angular_velocity` directly each tick bypasses the constraint solver: the six wheels' accumulated impulses end up inconsistent with the body state, the springs wind up and release, and the tank bucks. While it dragged its belly this was invisible, because the hull on the ground absorbed it. On springs it was violent — a full-lock reversal (back-left straight to forward-right) peaked at **21.9° pitch, 35.2° roll and 0.84 m of heave**, which is close to standing on its nose. Yaw is now `apply_torque(up * accel * yaw_inertia)` with `accel` the rate error clamped to `yaw_accel`, so the solver mediates it. The same reversal now peaks at **0.8° pitch, 0.4° roll, 0.02 m heave**, and a stationary pivot drifts **0.00 m/s** where the kinematic version slid 6.8.
 - Post-M5: **this partly overturns the "steering is a rate, not a force" finding above, and the reason is worth keeping.** That measurement — `apply_torque` reaching 1.46 rad/s airborne but "absorbed" grounded — was taken while the tank was resting on its hull, so what absorbed the torque was the belly on the ground, not the wheels. On springs, torque reaches **1.18 rad/s** against a 1.35 target with full authority (it saturates above `yaw_accel` 25; 6 was far too little at 0.11 rad/s). The doc's *drive* model is still right and its *neutral-steer-from-opposing-forces* model is still wrong — differential `engine_force` still yaws the hull at 0.00 rad/s — but the conclusion "no torque can do it either" was an artifact of the suspension bug. **A performance measurement taken on a broken configuration only describes the breakage.**
 - Post-M5: `verify_flip` covers all four full-lock reversals. It samples attitude *only while the tank is over flat ground*, checked by raycast — the first version failed one case out of four and the cause was the tank reaching the airfield slab mid-manoeuvre, not the reversal. Three of four combinations passing is exactly the shape of near-miss that has repeatedly let a real bug through here, so the fourth case earns its keep.
+- Post-M5: **the camera could look 40° higher than the gun could shoot.** The cannon elevates to +20°; the camera clamp was +60°. Past +20° the reticle kept rising and the barrel physically could not follow, so it read further and further "pointed down" — and with an 8 m arm, +60° swung the camera 6.9 m below its pivot, i.e. underground behind the tank, which is the "I drop below/behind the tank" symptom. Compounding it, the pivot at 2.5 m sat 0.9 m above the turret axis, so parallax put the barrel below the reticle at close range. The camera clamp is now derived from the gun (−8°…+15°, inside the gun's −8°…+20°), the pivot dropped to 2.1 m (0.5 m of parallax) and the arm to 7 m so a full look-up leaves the camera 0.87 m above ground instead of below it. `verify_gunline` asserts all four relationships, because every one of them is a silent geometry constraint that nothing else would catch.
+- Post-M5: turn authority at speed. The torque-driven yaw made turns noticeably stiffer — a held turn reached 0.27 rad/s where the old forced version delivered its 0.52 target. More torque does not fix it (`yaw_accel` 25 → 250 moved it 0.22 → 0.21): the *rate target* is the limit, not the torque. `steer_authority_high` 0.25 → 0.45 and `wheel_friction_slip` 3.0 → 2.0 bring it to ~0.36 rad/s, and both mean speed **and** turn rate improve together, because less lateral scrub means less speed bled in the turn. `steer_authority_high` must stay below `steer_authority_low` (0.6) or the tank turns harder at speed than at rest, inverting the wide-arc design this doc asks for — 0.65 measured 0.45 rad/s and was rejected for that reason, not for the number.

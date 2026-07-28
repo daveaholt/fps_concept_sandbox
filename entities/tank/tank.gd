@@ -5,11 +5,11 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var max_engine_force: float = 14000.0
 @export var pivot_force: float = 10000.0
 @export var steer_authority_low: float = 0.6
-@export var steer_authority_high: float = 0.25
+@export var steer_authority_high: float = 0.45
 @export var max_speed: float = 14.0
 @export var brake_force: float = 900.0
 @export var idle_brake: float = 350.0
-@export var wheel_friction_slip: float = 3.0
+@export var wheel_friction_slip: float = 2.0
 @export var suspension_rest_length: float = 0.55
 @export var suspension_max_force_n: float = 20000.0
 @export var suspension_damping_compression: float = 3.0
@@ -32,10 +32,10 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var shell_params_id: int = 2
 @export var fire_cooldown_time: float = 2.5
 @export var recoil_impulse: float = 9000.0
-@export var camera_pivot_height: float = 2.5
-@export var camera_spring_length: float = 8.0
-@export var camera_pitch_min_deg: float = -10.0
-@export var camera_pitch_max_deg: float = 60.0
+@export var camera_pivot_height: float = 2.1
+@export var camera_spring_length: float = 7.0
+@export var camera_pitch_min_deg: float = -8.0
+@export var camera_pitch_max_deg: float = 15.0
 
 var owner_peer: int = 0
 var health: float = 500.0
