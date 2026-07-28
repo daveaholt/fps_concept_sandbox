@@ -60,6 +60,7 @@ Keyboard/mouse and an Xbox-layout gamepad both work at once — no mode switch, 
 | Weapons | `1` rifle · `2` pistol · scroll cycles | D-pad up/down · `Y` swaps |
 | Fullscreen | `F11` | — |
 | Deploy map | `M` — recon while alive; opens automatically at session start and on death | `Back` |
+| Vehicles | `E` to enter the tank, `F` to exit · `WASD` drives, `Space` brakes, `LMB` fires the cannon | `X` / `B` |
 | Dev damage | `K` — 25 damage to yourself, to exercise the death loop | — |
 
 ## Project layout
@@ -125,8 +126,8 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 | M2 | Replication core | **Done** (`m2`) |
 | M3 | Prediction, reconciliation, ballistics | **Done** (`m3`) |
 | M4 | Deploy map + death loop | **Done** (`m4`) |
-| M5 | Vehicle framework + tank | Next |
-| M6 | Helicopter | |
+| M5 | Vehicle framework + tank | **Done** (`m5`) |
+| M6 | Helicopter | Next |
 | M7 | Sandbox polish pass | |
 
 ### Current scaffolding
