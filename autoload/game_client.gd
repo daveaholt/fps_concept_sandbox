@@ -20,6 +20,7 @@ var window: WindowMode = null
 var shim: NetShim = null
 var buffer := SnapshotBuffer.new()
 var prediction := PredictionBuffer.new()
+var ballistics: BallisticsManager = null
 
 var _address: String = ""
 var _port: int = 0
@@ -73,8 +74,11 @@ func _start_local_systems() -> void:
 	add_child(window)
 
 
-func register_level(players_root: Node) -> void:
+func register_level(players_root: Node, ballistics_manager: BallisticsManager = null) -> void:
 	_players_root = players_root
+	ballistics = ballistics_manager
+	if ballistics != null:
+		ballistics.authoritative = false
 	if not is_active:
 		return
 	if GameServer.is_active:
@@ -120,10 +124,13 @@ func _physics_process(delta: float) -> void:
 
 func _predict(cmd: InputCommand, delta: float) -> void:
 	var entity := my_entity
+	var shots_before: int = entity.state.shots_fired
 	var space := (entity as Node3D).get_world_3d().direct_space_state
 	var next := InfantrySim.simulate(entity.state, cmd, entity.tuning, space, delta)
 	entity.set_predicted_state(next, cmd.aim)
 	prediction.push(cmd.tick, cmd, next.clone())
+	if next.shots_fired != shots_before and ballistics != null:
+		ballistics.spawn(entity.muzzle_origin(), cmd.aim, next.weapon_index, get_peer_id(), 0.0)
 
 
 func _reconcile(delta: float) -> void:
@@ -187,6 +194,13 @@ func _accept_snapshot(snapshot: Dictionary) -> void:
 	if entities.has(my_entity.name):
 		_pending_auth = entities[my_entity.name]
 		_pending_auth_tick = _acked_tick
+
+
+@rpc("authority", "call_remote", "unreliable")
+func spawn_tracer(origin: Vector3, direction: Vector3, params_id: int, shooter_peer: int) -> void:
+	if ballistics == null or shooter_peer == get_peer_id():
+		return
+	ballistics.spawn(origin, direction, params_id, shooter_peer, 0.0)
 
 
 @rpc("authority", "call_remote", "reliable")

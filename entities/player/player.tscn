@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://entities/player/player.gd" id="1_abrql"]
 [ext_resource type="Resource" path="res://entities/player/player_tuning.tres" id="2_sglur"]
+[ext_resource type="Resource" path="res://entities/player/infantry_hit_zones.tres" id="3_sglur"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_bls4j"]
 radius = 0.4
@@ -49,6 +50,7 @@ size = Vector3(0.09, 0.13, 0.78)
 collision_layer = 2
 script = ExtResource("1_abrql")
 tuning = ExtResource("2_sglur")
+hit_zones = ExtResource("3_sglur")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1489660744]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)

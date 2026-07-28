@@ -13,10 +13,14 @@
 [ext_resource type="Material" path="res://assets/materials/zone_head.tres" id="10_aj57l"]
 [ext_resource type="Material" path="res://assets/materials/grid.tres" id="11_nnn8o"]
 [ext_resource type="Material" path="res://assets/materials/zone_torso.tres" id="12_tq6jb"]
+[ext_resource type="Script" path="res://levels/sandbox/range_dummy.gd" id="13_hwij6"]
 [ext_resource type="Material" path="res://assets/materials/zone_limb.tres" id="13_tmxet"]
 [ext_resource type="Script" path="res://systems/spawning/spawn_point.gd" id="14_ct1gt"]
+[ext_resource type="Resource" path="res://entities/player/player_tuning.tres" id="14_kamv1"]
+[ext_resource type="Resource" path="res://entities/player/infantry_hit_zones.tres" id="15_q0vl7"]
 [ext_resource type="Script" path="res://levels/sandbox/dev_overlay.gd" id="17_v2ya2"]
 [ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="18_tx1dy"]
+[ext_resource type="Script" path="res://systems/ballistics/ballistics_manager.gd" id="19_ia0wb"]
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="19_p1wtp"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_60cnp"]
@@ -1346,6 +1350,9 @@ outline_size = 16
 [node name="TargetDummy" type="StaticBody3D" parent="FiringRange" unique_id=908959556]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -125)
 collision_mask = 0
+script = ExtResource("13_hwij6")
+tuning = ExtResource("14_kamv1")
+hit_zones = ExtResource("15_q0vl7")
 
 [node name="Visual" type="Node3D" parent="FiringRange/TargetDummy" unique_id=1696303678]
 
@@ -1515,3 +1522,6 @@ modulate = Color(0.7, 0.95, 1, 1)
 text = "interact test"
 font_size = 128
 outline_size = 16
+
+[node name="Ballistics" type="Node3D" parent="." unique_id=2040110321]
+script = ExtResource("19_ia0wb")

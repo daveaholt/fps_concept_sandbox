@@ -1,11 +1,13 @@
 extends CharacterBody3D
 
 signal died(entity: Node)
+signal fired(origin: Vector3, direction: Vector3, params_id: int)
 
 @export var tuning: InfantryTuning
 @export var eye_height: float = 1.6
 @export var muzzle_flash_time: float = 0.045
 @export var error_smoothing_tau: float = 0.035
+@export var hit_zones: HitZones
 
 const WORLD_VISIBLE_LAYER := 1
 const OWN_BODY_LAYER := 2
@@ -32,6 +34,8 @@ var _possessed: bool = false
 var _server_authority: bool = true
 var role: Role = Role.REMOTE
 var _visual_error: Vector3 = Vector3.ZERO
+var _history := PositionHistory.new()
+var _fired_seen: int = 0
 
 
 func _ready() -> void:
@@ -62,6 +66,7 @@ func _ready() -> void:
 
 	state.position = global_position
 	_shots_seen = state.shots_fired
+	_fired_seen = state.shots_fired
 	_set_flash_visible(false)
 	if _camera != null:
 		_camera.current = false
@@ -191,6 +196,21 @@ func _is_server() -> bool:
 	return _server_authority
 
 
+func get_history() -> PositionHistory:
+	return _history
+
+
+func muzzle_origin() -> Vector3:
+	return state.position + Vector3.UP * eye_height + _aim.normalized() * 0.35
+
+
+func _emit_shots() -> void:
+	if state.shots_fired == _fired_seen:
+		return
+	_fired_seen = state.shots_fired
+	fired.emit(muzzle_origin(), _aim.normalized(), state.weapon_index)
+
+
 func _physics_process(delta: float) -> void:
 	if role != Role.SERVER:
 		return
@@ -199,6 +219,8 @@ func _physics_process(delta: float) -> void:
 	_aim = cmd.aim
 	global_position = state.position
 	velocity = state.velocity
+	_history.push(float(Time.get_ticks_msec()) * 0.001, state.position, _aim)
+	_emit_shots()
 	_apply_pose(delta)
 
 

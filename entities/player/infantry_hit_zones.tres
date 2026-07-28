@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="HitZones" format=3]
+
+[ext_resource type="Script" path="res://entities/player/hit_zones.gd" id="1_aaeor"]
+
+[resource]
+script = ExtResource("1_aaeor")
+zone_names = PackedStringArray("head", "torso", "arm_l", "arm_r", "legs")
+kinds = PackedInt32Array(0, 1, 1, 1, 1)
+centres = PackedVector3Array(0, 1.62, 0, 0, 1.18, 0, -0.36, 1.18, 0, 0.36, 1.18, 0, 0, 0.45, 0)
+extents = PackedVector3Array(0.2, 0.2, 0.2, 0.3, 0.38, 0.2, 0.1, 0.31, 0.12, 0.1, 0.31, 0.12, 0.22, 0.45, 0.18)
+multipliers = PackedFloat32Array(2, 1, 0.75, 0.75, 0.75)

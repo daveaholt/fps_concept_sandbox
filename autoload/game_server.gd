@@ -22,6 +22,7 @@ var _starved: Dictionary = {}
 var _spawn_root: Node = null
 var _default_spawn: SpawnPoint = null
 var _player_scene: PackedScene = null
+var ballistics: BallisticsManager = null
 
 
 func _ready() -> void:
@@ -50,9 +51,34 @@ func _start(port: int, mode: NetCli.Mode) -> void:
 	server_started.emit(port)
 
 
-func register_level(spawn_root: Node, default_spawn: SpawnPoint) -> void:
+func register_level(spawn_root: Node, default_spawn: SpawnPoint,
+		ballistics_manager: BallisticsManager = null) -> void:
 	_spawn_root = spawn_root
 	_default_spawn = default_spawn
+	ballistics = ballistics_manager
+	if ballistics != null and is_active:
+		ballistics.authoritative = true
+
+
+func get_peer_rtt(peer_id: int) -> float:
+	if peer_id == 1 or multiplayer.multiplayer_peer == null:
+		return 0.0
+	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if enet == null:
+		return 0.0
+	var packet_peer := enet.get_peer(peer_id)
+	if packet_peer == null:
+		return 0.0
+	return float(packet_peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME)) * 0.001
+
+
+func _on_entity_fired(origin: Vector3, direction: Vector3, params_id: int, peer_id: int) -> void:
+	if ballistics == null:
+		return
+	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
+	ballistics.spawn(origin, direction, params_id, peer_id, view_delay)
+	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
+		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
 
 
 func get_port() -> int:
@@ -92,6 +118,8 @@ func _on_peer_disconnected(peer_id: int) -> void:
 func _release_peer(peer_id: int) -> void:
 	var entity: Node = _possession.get(peer_id)
 	if entity != null and is_instance_valid(entity):
+		if ballistics != null:
+			ballistics.unregister_target(entity)
 		entity.queue_free()
 	_possession.erase(peer_id)
 	_inputs.erase(peer_id)
@@ -133,6 +161,9 @@ func deploy(peer_id: int) -> Node:
 	_spawn_root.add_child(entity, true)
 	entity.state.position = origin
 	entity.died.connect(entity_died)
+	entity.fired.connect(_on_entity_fired.bind(peer_id))
+	if ballistics != null:
+		ballistics.register_target(entity)
 
 	_possession[peer_id] = entity
 	_last_processed[peer_id] = 0

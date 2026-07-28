@@ -122,8 +122,8 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 | M0 | Project bones + net bootstrap | **Done** (`m0`) |
 | M1 | Infantry simulation, host mode | **Done** (`m1`) |
 | M2 | Replication core | **Done** (`m2`) |
-| M3 | Prediction, reconciliation, ballistics | Next |
-| M4 | Deploy map + death loop | |
+| M3 | Prediction, reconciliation, ballistics | **Done** (`m3`) |
+| M4 | Deploy map + death loop | Next |
 | M5 | Vehicle framework + tank | |
 | M6 | Helicopter | |
 | M7 | Sandbox polish pass | |

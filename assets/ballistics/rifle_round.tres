@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="ProjectileParams" format=3]
+
+[ext_resource type="Script" path="res://entities/ballistics/projectile_params.gd" id="1_w5e4l"]
+
+[resource]
+script = ExtResource("1_w5e4l")
+display_name = "Rifle round"
