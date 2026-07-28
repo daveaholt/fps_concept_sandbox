@@ -41,6 +41,8 @@ The networked milestone gates are run under `--latency 100 --jitter 20 --loss 0.
 
 Design range is 2–8 players over direct IP. There is no lobby, matchmaking or NAT punchthrough — use an IP or a VPN-LAN.
 
+For internet play with friends, the server runs on an on-demand Azure VM (`docs/12_hosting.md`). Once the **MH** milestone lands, joining requires the embedded auth key: both server and client builds read `secrets/auth_key.txt` (gitignored, baked in at export) and the server drops any peer that can't answer its challenge — see the connection-gating section of `docs/10_multiplayer.md`.
+
 ### On this machine
 
 The Godot binary lives at `C:\Godot\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe`. Use the `_console` build when you want stdout; the plain `.exe` swallows it.
@@ -114,6 +116,7 @@ The docs are the source of truth. Read the ones relevant to your task before wri
 | `09_assets.md` | Placeholder strategy, Visual-swap contract |
 | `10_multiplayer.md` | Server authority, prediction, lag compensation |
 | `11_ballistics.md` | Projectile physics, netcode, firing range |
+| `12_hosting.md` | Azure dedicated-server hosting + connection auth, for internet friend tests |
 
 ## Milestones
 
@@ -128,6 +131,7 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 | M4 | Deploy map + death loop | **Done** (`m4`) |
 | M5 | Vehicle framework + tank | **Done** (`m5`) |
 | M6 | Helicopter | Next |
+| MH | Hosted friend test (auth handshake + Azure server) | |
 | M7 | Sandbox polish pass | |
 
 ### Current scaffolding

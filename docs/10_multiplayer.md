@@ -74,11 +74,23 @@ All weapons are simulated projectiles — full spec in `11_ballistics.md`; summa
 
 All RPCs validate sender: only the bound peer's commands drive an entity; a command for an entity you don't own is dropped and logged (that log *is* the cheap cheater alarm).
 
+## Connection gating (embedded client key)
+
+Joining requires proving you hold the client build, via challenge–response with a key embedded at export time:
+
+1. On ENet connect, the server sends the peer a random 32-byte nonce and starts a **2 s auth timer**.
+2. The client replies `HMAC-SHA256(key, nonce)` (Godot's `HMACContext`). Server verifies against its own key.
+3. Wrong answer, no answer in time, or *any other RPC before auth* → immediate disconnect + log. Authenticated peers proceed to the normal join flow.
+
+The key lives in `secrets/auth_key.txt` — **gitignored, never committed** — read at startup by both client and dedicated-server builds (export includes the file; a missing key is a startup error, not a silent open server). Key rotation = new builds for everyone; acceptable at friends-scale.
+
+Property bought: possession of the distributed client = permission to join; scanners and strangers bounce. Honest limits: a key inside a distributed binary is extractable by a determined holder of that binary (fine — those are exactly the invited people), and unauthenticated packets still reach the process before rejection, so hosting keeps a firewall layer in front for anything beyond nuisance level (see 12).
+
 ## What the server validates (anti-cheat checklist)
 
 Positions (server-computed, always) · movement speed (implicit — server runs the sim; client cmd `move` vector is clamped to length 1) · fire cooldowns & turret clamps (server state) · hit results (server traces only) · enter/exit/spawn legality (above) · damage (server-only code path; clients never send damage numbers — `apply_damage` becomes server-side API).
 
-**Known gaps, accepted for the sandbox:** no interest management (a wallhack can read the full snapshot — fixing this is real engineering, backlog), no aimbot heuristics, no packet encryption/auth, `aim` vector trusted as-is (clamped to unit length only). These are noted because knowing *where* the line is drawn is part of the concept being explored.
+**Known gaps, accepted for the sandbox:** no interest management (a wallhack can read the full snapshot — fixing this is real engineering, backlog), no aimbot heuristics, no packet encryption (join is gated by the embedded-key handshake above, but post-auth traffic is plaintext), `aim` vector trusted as-is (clamped to unit length only). These are noted because knowing *where* the line is drawn is part of the concept being explored.
 
 ## Impact on the codebase (what "baked in from the start" concretely means)
 

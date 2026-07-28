@@ -56,6 +56,7 @@ fps_concept_sandbox/
 | `09_assets.md` | Placeholder strategy, Visual-swap contract, import conventions |
 | `10_multiplayer.md` | Server authority, prediction/reconciliation, lag compensation |
 | `11_ballistics.md` | Projectile physics for all weapons — model, netcode, firing range |
+| `12_hosting.md` | Azure dedicated-server hosting for friend tests |
 
 ## Open questions
 

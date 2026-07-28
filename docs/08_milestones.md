@@ -44,6 +44,12 @@ Heli per 06 reusing the 04 framework and the vehicle replication path from M5 un
 
 **Gate:** 06 acceptance criteria in host mode; networked flight verdict written down either way.
 
+## MH — Hosted friend test (added with 12; runs any time after M6, before inviting friends)
+
+Implement the embedded-key auth handshake per 10 (nonce challenge, HMAC reply, 2 s drop, gitignored `secrets/auth_key.txt` baked into exports) and stand up the Azure server per 12 (VM, NSG, systemd unit, DNS label, auto-shutdown, deploy script).
+
+**Gate:** a friend connects from the internet via the DNS hostname and plays; a client with a wrong/missing key (debug flag) is dropped within 2 s and logged; the server survives a session and `az vm deallocate` ends billing.
+
 ## M7 — Sandbox polish pass (open-ended)
 
 Backlog, any order: passenger seats · vehicle icons + *squad/team* players on deploy map (never all players — see 07) · exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · tank cockpit cam · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
@@ -53,7 +59,7 @@ Backlog, any order: passenger seats · vehicle icons + *squad/team* players on d
 - Tune via exported vars at runtime; write final values back into the docs' tunables tables when a milestone closes (docs are source of truth for feel numbers).
 - Anything cut or changed from spec gets a one-line note in the relevant doc's Open questions — cheap decision log.
 - Every networked gate is tested under the latency shim, not just localhost-perfect conditions.
-- Each milestone = one git commit minimum, tagged `m0`…`m7`.
+- Each milestone = one git commit minimum, tagged `m0`…`m7` (plus `mh`).
 
 ## Open questions
 
@@ -65,3 +71,4 @@ Backlog, any order: passenger seats · vehicle icons + *squad/team* players on d
 - Post-M2: `physics_interpolation` is on and `physics_jitter_fix` is 0 (the two fight). Sim runs at 60 Hz while displays run far higher — 240 Hz on the current dev machine — so without interpolation each simulated position is held for several frames and then jumps. This was also the first (wrong) guess at the bounce above; it is worth having regardless, but it was not the cause.
 - Post-M2: deploys fan out around the spawn point rather than stacking every player on the exact same coordinate. Cosmetic, but two soldiers standing inside each other makes the replication gates impossible to eyeball.
 - Post-M2: anything calling `multiplayer.get_unique_id()` / `is_server()` per frame errors once the peer exists but is disconnected. Entity role is fixed for an entity's lifetime, so it is now cached at `_ready`.
+- MH added retroactively (with 12): the auth handshake was briefly specced into M2's scope, but M2 had already shipped — connection gating is its own pre-hosting milestone instead.
