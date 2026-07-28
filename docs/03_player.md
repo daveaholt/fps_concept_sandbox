@@ -74,3 +74,10 @@ Per 11's locational-damage spec, the soldier carries a `HitZones` resource: head
 - Prompt appears when looking at a vehicle within 3 m and E possesses it.
 - Esc releases mouse; clicking recaptures.
 - Weapon switch: 1/2/scroll swap with correct draw times; firing during a draw does nothing; rifle full-auto holds, pistol requires clicks; under simulated latency (M3) switch-then-immediately-fire predicts and reconciles without a phantom shot.
+
+## Open questions
+
+- M1: the interaction prompt is emitted by a client-side `InteractionScanner` in `systems/possession/`, not by the player entity — 01/10 forbid anything in `entities/` from touching EventBus, which supersedes this doc's `EventBus.interaction_prompt` line. The entity only exposes `get_interact_target()`; the scanner decides what to say. The `GameManager.possess(vehicle)` call likewise becomes a server grant (10).
+- M1: `RifleStub` is gone. 11 supersedes hitscan, so M1 ships a cosmetic muzzle flash only and real projectiles arrive with `BallisticsManager` in M3. `HitZones` is deferred to M3 for the same reason; the placeholder body's proportions were still authored to match the zones.
+- M1: movement gained two collision details the model needs but the spec did not name — the capsule is lifted by `floor_probe_lift` (0.1 m) before a grounded move and snapped back down afterwards, and a penetration probe pushes the capsule out of geometry it starts inside. The lift gives a free ~0.1 m step-up; the push-out is what stops a spawn placed inside a prop from falling through the world forever. Both are deterministic and replay-safe.
+- M1: the vehicle half of the interaction acceptance criterion ("E possesses it") cannot be verified until M5. A `TestVehicle` Area3D in group `vehicle_entry` was added to the graybox so the prompt half is testable now.

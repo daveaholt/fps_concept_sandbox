@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="InfantryTuning" format=3]
+
+[ext_resource type="Script" path="res://entities/player/infantry_tuning.gd" id="1_jbmmw"]
+[ext_resource type="Script" path="res://entities/player/weapon_def.gd" id="2_15g67"]
+[ext_resource type="Resource" path="res://assets/weapons/rifle.tres" id="3_yat20"]
+[ext_resource type="Resource" path="res://assets/weapons/pistol.tres" id="4_wamuc"]
+
+[resource]
+script = ExtResource("1_jbmmw")
+weapons = Array[ExtResource("2_15g67")]([ExtResource("3_yat20"), ExtResource("4_wamuc")])

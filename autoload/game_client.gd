@@ -15,6 +15,8 @@ var my_entity: Node = null
 var is_active: bool = false
 var state: State = State.OFFLINE
 
+var sampler: InputSampler = null
+
 var _address: String = ""
 var _port: int = 0
 var _connecting_for: float = 0.0
@@ -25,15 +27,28 @@ func _ready() -> void:
 		return
 	match NetCli.get_mode():
 		NetCli.Mode.CLIENT:
+			_start_local_systems()
 			_connect_to(NetCli.get_connect_address(), NetCli.get_port())
 		NetCli.Mode.HOST:
+			_start_local_systems()
 			is_active = true
 			_address = "local"
 			_port = GameServer.get_port()
 			_set_state(State.CONNECTED if GameServer.is_active else State.FAILED)
+			GameServer.possession_granted.connect(_on_possession_granted)
 			print("[client] host mode — local player is peer %d" % multiplayer.get_unique_id())
 		NetCli.Mode.SERVER:
 			print("[client] dedicated server — no local client")
+
+
+func _start_local_systems() -> void:
+	sampler = InputSampler.new()
+	sampler.name = "InputSampler"
+	add_child(sampler)
+
+	var scanner := InteractionScanner.new()
+	scanner.name = "InteractionScanner"
+	add_child(scanner)
 
 
 func _connect_to(address: String, port: int) -> void:
@@ -64,6 +79,38 @@ func _process(delta: float) -> void:
 		push_error("[client] no response from %s:%d after %.0f s — wrong address, server not running, or firewalled"
 			% [_address, _port, CONNECT_TIMEOUT_SEC])
 		_set_state(State.FAILED)
+
+
+func send_command(cmd: InputCommand) -> void:
+	if GameServer.is_active:
+		GameServer.submit_command(get_peer_id(), cmd)
+
+
+func request_dev_damage(amount: float) -> void:
+	if GameServer.is_active:
+		GameServer.apply_dev_damage(get_peer_id(), amount)
+
+
+func _on_possession_granted(peer_id: int, entity: Node) -> void:
+	if peer_id != get_peer_id():
+		return
+	set_my_entity(entity)
+
+
+func set_my_entity(entity: Node) -> void:
+	if my_entity != null and is_instance_valid(my_entity) and my_entity.has_method("unpossess"):
+		my_entity.unpossess()
+
+	my_entity = entity
+
+	if my_entity != null and my_entity.has_method("possess"):
+		my_entity.possess()
+		if sampler != null:
+			sampler.capture_mouse()
+	elif sampler != null:
+		sampler.release_mouse()
+
+	EventBus.possession_changed.emit(my_entity)
 
 
 func get_address() -> String:
@@ -99,7 +146,7 @@ func _on_connection_failed() -> void:
 
 func _on_server_disconnected() -> void:
 	push_warning("[client] server disconnected")
-	my_entity = null
+	set_my_entity(null)
 	_set_state(State.OFFLINE)
 
 

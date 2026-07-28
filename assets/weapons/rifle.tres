@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="WeaponDef" format=3]
+
+[ext_resource type="Script" path="res://entities/player/weapon_def.gd" id="1_foeme"]
+
+[resource]
+script = ExtResource("1_foeme")
+display_name = "Rifle"
+ballistics_params = "rifle"

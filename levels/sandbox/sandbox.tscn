@@ -1,5 +1,6 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://levels/sandbox/sandbox.gd" id="1_ia0wb"]
 [ext_resource type="Material" path="res://assets/materials/ground.tres" id="1_j0yby"]
 [ext_resource type="Material" path="res://assets/materials/slope.tres" id="2_saigg"]
 [ext_resource type="Material" path="res://assets/materials/structure.tres" id="3_ia0wb"]
@@ -15,8 +16,9 @@
 [ext_resource type="Material" path="res://assets/materials/zone_limb.tres" id="13_tmxet"]
 [ext_resource type="Script" path="res://systems/spawning/spawn_point.gd" id="14_ct1gt"]
 [ext_resource type="Script" path="res://levels/sandbox/net_demo.gd" id="15_6lnam"]
-[ext_resource type="Script" path="res://levels/sandbox/dev_camera.gd" id="16_lorhs"]
 [ext_resource type="Script" path="res://levels/sandbox/dev_overlay.gd" id="17_v2ya2"]
+[ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="18_tx1dy"]
+[ext_resource type="Script" path="res://ui/hud/hud.gd" id="19_p1wtp"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_60cnp"]
 sky_top_color = Color(0.3, 0.46, 0.72, 1)
@@ -617,7 +619,19 @@ height = 0.2
 material = ExtResource("5_p1wtp")
 size = Vector3(0.25, 5, 0.25)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_hwij6"]
+size = Vector3(3.4, 2.2, 5.4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kamv1"]
+albedo_color = Color(0.3, 0.34, 0.24, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_q0vl7"]
+material = SubResource("StandardMaterial3D_kamv1")
+size = Vector3(3, 1.8, 5)
+
 [node name="Sandbox" type="Node3D" unique_id=340252235]
+script = ExtResource("1_ia0wb")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=502843528]
 environment = SubResource("Environment_e7iqv")
@@ -1376,7 +1390,7 @@ outline_size = 16
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=1682073378]
 
 [node name="MainBase" type="Marker3D" parent="SpawnPoints" unique_id=1817149748]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 62)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 58)
 script = ExtResource("14_ct1gt")
 display_name = "Main Base"
 
@@ -1458,12 +1472,6 @@ spawn_path = NodePath("../Spawned")
 
 [node name="Spawned" type="Node3D" parent="NetDemo" unique_id=984082200]
 
-[node name="DevCamera" type="Camera3D" parent="." unique_id=851097282]
-transform = Transform3D(1, 0, 0, 0, 0.9563048, 0.2923717, 0, -0.2923717, 0.9563048, 0, 46, 122)
-current = true
-far = 2000.0
-script = ExtResource("16_lorhs")
-
 [node name="DevOverlay" type="CanvasLayer" parent="." unique_id=1324878947]
 
 [node name="NetStatus" type="Label" parent="DevOverlay" unique_id=383491466]
@@ -1475,3 +1483,43 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 script = ExtResource("17_v2ya2")
+
+[node name="Players" type="Node3D" parent="." unique_id=775648173]
+
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1980620577]
+_spawnable_scenes = PackedStringArray("res://entities/player/player.tscn")
+spawn_path = NodePath("../Players")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=692900117]
+
+[node name="HUD" type="Control" parent="UI" unique_id=623381066 instance=ExtResource("18_tx1dy")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("19_p1wtp")
+
+[node name="TestVehicle" type="Area3D" parent="." unique_id=1749422891 groups=["vehicle_entry"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 58)
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TestVehicle" unique_id=2091650271]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("BoxShape3D_hwij6")
+
+[node name="Visual" type="Node3D" parent="TestVehicle" unique_id=1974903389]
+
+[node name="Hull" type="MeshInstance3D" parent="TestVehicle/Visual" unique_id=1271468322]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("BoxMesh_q0vl7")
+
+[node name="Sign" type="Label3D" parent="TestVehicle" unique_id=1440971288]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, 0)
+pixel_size = 0.00625
+billboard = 1
+modulate = Color(0.7, 0.95, 1, 1)
+text = "interact test"
+font_size = 128
+outline_size = 16

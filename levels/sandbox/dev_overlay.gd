@@ -13,7 +13,7 @@ func _process(_delta: float) -> void:
 		lines.append("client: %s:%d   %s"
 			% [GameClient.get_address(), GameClient.get_port(), _state_text(GameClient.state)])
 
-	lines.append("RMB look · WASD move · R/F up-down · Shift boost")
+	lines.append("WASD move · Space jump · Shift sprint · 1/2 weapons · K dev damage · Esc free mouse")
 	text = "\n".join(lines)
 
 

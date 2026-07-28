@@ -59,3 +59,4 @@ Backlog, any order: passenger seats · vehicle icons + *other players* on deploy
 
 - M0: shipped three extras beyond the milestone text, all scaffolding with a stated expiry — a free-fly `DevCamera` (there is nothing possessable to look through until M1), a `DevOverlay` net-status readout (replaced by the HUD in M4), and a `--net-log` flag that prints replication traffic so the M0 gate can also be checked from two headless consoles.
 - M0: the graybox was authored by a one-shot generator script that was **not** kept in-repo — `levels/sandbox/sandbox.tscn` is a normal editor-editable scene and is the artifact of record from here on.
+- M1: `DevCamera` was deleted as planned. A remote client therefore has no view of its own until M2 gives it an entity — at M1 only the host has a body, which is what "host mode" in this milestone means.

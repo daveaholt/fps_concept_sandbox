@@ -65,3 +65,4 @@ Under the server-authoritative model (10), these actions are only ever read on t
 
 - Mouse-look for heli cyclic instead of WASD (freeing WASD for nothing)? Current call: keys for cyclic, mouse for free-look in cockpit — revisit after first flight test (see 06 open questions).
 - M0: `weapon_cycle` is defined as two actions, `weapon_cycle_up` / `weapon_cycle_down`, matching the bitmask field list in 10. `ui_cancel` is left on Godot's default Esc binding rather than redefined. Added `deploy_confirm` (Enter) for 07's Deploy button.
+- M1: the dev damage key (K, per 08) is read as a raw physical key by the client-side sampler rather than added as an action, so the gameplay input map stays exactly what this doc specifies.

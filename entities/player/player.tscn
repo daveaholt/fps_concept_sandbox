@@ -1,0 +1,94 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://entities/player/player.gd" id="1_abrql"]
+[ext_resource type="Resource" path="res://entities/player/player_tuning.tres" id="2_sglur"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_bls4j"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fkugw"]
+albedo_color = Color(1, 0.82, 0.35, 1)
+roughness = 0.9
+emission_enabled = true
+emission = Color(1, 0.82, 0.35, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_8fjmc"]
+material = SubResource("StandardMaterial3D_fkugw")
+radius = 0.055
+height = 0.11
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qiwj3"]
+albedo_color = Color(0.35, 0.45, 0.32, 1)
+roughness = 0.9
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_26q78"]
+material = SubResource("StandardMaterial3D_qiwj3")
+radius = 0.36
+height = 1.42
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bectd"]
+albedo_color = Color(0.72, 0.58, 0.44, 1)
+roughness = 0.9
+
+[sub_resource type="SphereMesh" id="SphereMesh_wvtmh"]
+material = SubResource("StandardMaterial3D_bectd")
+radius = 0.18
+height = 0.36
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7thud"]
+albedo_color = Color(0.16, 0.16, 0.18, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_a1qjk"]
+material = SubResource("StandardMaterial3D_7thud")
+size = Vector3(0.09, 0.13, 0.78)
+
+[node name="Player" type="CharacterBody3D" unique_id=602818559]
+collision_layer = 2
+script = ExtResource("1_abrql")
+tuning = ExtResource("2_sglur")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1489660744]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_bls4j")
+
+[node name="Head" type="Node3D" parent="." unique_id=291175781]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=372716628]
+cull_mask = 1048573
+far = 2000.0
+
+[node name="InteractRay" type="RayCast3D" parent="Head" unique_id=494862618]
+target_position = Vector3(0, 0, -3)
+collision_mask = 20
+collide_with_areas = true
+
+[node name="Muzzle" type="Marker3D" parent="Head" unique_id=398404666]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, -0.14, -0.55)
+
+[node name="Flash" type="MeshInstance3D" parent="Head/Muzzle" unique_id=1749672283]
+visible = false
+mesh = SubResource("SphereMesh_8fjmc")
+
+[node name="Visual" type="Node3D" parent="." unique_id=1754846485]
+
+[node name="Body" type="MeshInstance3D" parent="Visual" unique_id=1178994931]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.71, 0)
+layers = 2
+mesh = SubResource("CapsuleMesh_26q78")
+
+[node name="Head" type="MeshInstance3D" parent="Visual" unique_id=589931348]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+layers = 2
+mesh = SubResource("SphereMesh_wvtmh")
+
+[node name="WeaponProxy" type="Node3D" parent="Visual" unique_id=1641473167]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 1.34, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Visual/WeaponProxy" unique_id=1240399447]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3)
+layers = 2
+mesh = SubResource("BoxMesh_a1qjk")

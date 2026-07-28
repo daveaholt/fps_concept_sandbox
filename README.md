@@ -35,9 +35,17 @@ The Godot binary lives at `C:\Godot\Godot_v4.7-stable_win64.exe\Godot_v4.7-stabl
 
 ## Controls
 
-Full binding table lives in `docs/02_input.md`. Currently active:
+Full binding table lives in `docs/02_input.md`. Currently active (infantry):
 
-**Free-fly observer camera** (placeholder until the infantry controller lands) — hold RMB to look, `WASD` to move, `R`/`F` up and down, `Shift` to boost, `Esc` to release the mouse.
+| | |
+|---|---|
+| Move | `W` `A` `S` `D` |
+| Look | Mouse (captured on deploy; `Esc` frees it, click recaptures) |
+| Jump | `Space` |
+| Sprint | `Shift` (forward-ish only) |
+| Fire | `LMB` — rifle is full-auto, pistol semi-auto |
+| Weapons | `1` rifle · `2` pistol · scroll cycles |
+| Dev damage | `K` — 25 damage to yourself, to exercise the death loop |
 
 ## Project layout
 
@@ -98,8 +106,8 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 | | Milestone | Status |
 |---|---|---|
 | M0 | Project bones + net bootstrap | **Done** (`m0`) |
-| M1 | Infantry simulation, host mode | Next |
-| M2 | Replication core | |
+| M1 | Infantry simulation, host mode | **Done** (`m1`) |
+| M2 | Replication core | Next |
 | M3 | Prediction, reconciliation, ballistics | |
 | M4 | Deploy map + death loop | |
 | M5 | Vehicle framework + tank | |
@@ -108,11 +116,13 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 
 ### Current scaffolding
 
-M0 shipped three throwaway pieces so there was something to look at and test before real entities exist. Delete them when their milestone lands:
+Throwaway pieces that exist only until the milestone that replaces them. Delete them then:
 
-- `entities/net_demo/` + `levels/sandbox/net_demo.gd` — the bouncing probe ball, replaced by the real snapshot pipeline at **M2**
-- `levels/sandbox/dev_camera.gd` — free-fly observer, replaced by the possession camera at **M1**
+- `entities/net_demo/` + `levels/sandbox/net_demo.gd` — the bouncing probe ball, replaced by the real snapshot pipeline at **M2**. The player pose currently rides the same naive per-tick RPC and goes the same way.
 - `levels/sandbox/dev_overlay.gd` — net status readout, replaced by the HUD at **M4**
+- `TestVehicle` in `sandbox.tscn` — an empty `vehicle_entry` volume so the interaction prompt is testable before a real vehicle exists at **M5**
+
+`levels/sandbox/dev_camera.gd` was deleted at M1, replaced by the possessed player's own camera.
 
 ## Verifying a change
 
