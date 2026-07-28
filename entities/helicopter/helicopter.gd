@@ -20,8 +20,7 @@ extends RigidBody3D
 @export var chase_spring_length: float = 10.0
 @export var chase_pivot_height: float = 2.2
 @export var chase_lag: float = 6.0
-@export var cockpit_yaw_limit_deg: float = 120.0
-@export var cockpit_pitch_limit_deg: float = 60.0
+@export var chase_pitch_deg: float = -8.0
 
 var owner_peer: int = 0
 var health: float = 350.0
@@ -43,7 +42,6 @@ var _last_command: InputCommand = InputCommand.new()
 var _aim: Vector3 = Vector3.FORWARD
 var _possessed: bool = false
 var _server_authority: bool = true
-var _engine_latch: bool = false
 var _chase_active: bool = false
 var _history := PositionHistory.new()
 
@@ -87,6 +85,7 @@ func get_display_name() -> String:
 
 func possess() -> void:
 	_possessed = true
+	engine_on = true
 	_chase_active = false
 	_chase_yaw = global_transform.basis.get_euler().y
 	_activate_camera()
@@ -231,19 +230,14 @@ func _physics_process(delta: float) -> void:
 	if driving:
 		_aim = cmd.aim
 
-	_step_engine(cmd, driving, delta)
+	_step_engine(delta)
 	_step_collective(cmd, driving, delta)
 	_apply_rotor_forces(cmd, driving)
 	_history.push(float(Time.get_ticks_msec()) * 0.001, global_position,
 		-global_transform.basis.z)
 
 
-func _step_engine(cmd: InputCommand, driving: bool, delta: float) -> void:
-	var pressed := driving and cmd.held(InputCommand.ENGINE)
-	if pressed and not _engine_latch:
-		engine_on = not engine_on
-	_engine_latch = pressed
-
+func _step_engine(delta: float) -> void:
 	var target := 1.0 if engine_on else 0.0
 	rotor_rpm_norm = move_toward(rotor_rpm_norm, target, spool_rate * delta)
 
@@ -307,26 +301,15 @@ func _activate_camera() -> void:
 
 
 func _update_cameras(delta: float) -> void:
-	var flat := Vector3(_aim.x, 0.0, _aim.z)
-	if flat.length_squared() < 0.000001:
-		flat = Vector3.FORWARD
-	var want_yaw := atan2(-flat.x, -flat.z)
-	var pitch := asin(clampf(_aim.normalized().y, -1.0, 1.0))
-
 	if _cockpit_camera != null and not _chase_active:
-		var hull_yaw := global_transform.basis.get_euler().y
-		var offset := wrapf(want_yaw - hull_yaw, -PI, PI)
-		var yaw_limit := deg_to_rad(cockpit_yaw_limit_deg)
-		var pitch_limit := deg_to_rad(cockpit_pitch_limit_deg)
-		_cockpit_camera.rotation = Vector3(
-			clampf(pitch, -pitch_limit, pitch_limit),
-			clampf(offset, -yaw_limit, yaw_limit), 0.0)
+		_cockpit_camera.rotation = Vector3.ZERO
 
 	if _chase_rig != null and _chase_active:
-		_chase_yaw = lerp_angle(_chase_yaw, want_yaw, clampf(chase_lag * delta, 0.0, 1.0))
+		var hull_yaw := global_transform.basis.get_euler().y
+		_chase_yaw = lerp_angle(_chase_yaw, hull_yaw, clampf(chase_lag * delta, 0.0, 1.0))
 		_chase_rig.global_position = global_position + Vector3.UP * chase_pivot_height
 		_chase_rig.global_rotation = Vector3(0.0, _chase_yaw, 0.0)
 		if _chase_spring != null:
-			_chase_spring.rotation = Vector3(minf(pitch, 0.0), 0.0, 0.0)
+			_chase_spring.rotation = Vector3(deg_to_rad(chase_pitch_deg), 0.0, 0.0)
 		if _chase_camera != null:
-			_chase_camera.rotation = Vector3(pitch - minf(pitch, 0.0), 0.0, 0.0)
+			_chase_camera.rotation = Vector3.ZERO

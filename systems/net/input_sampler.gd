@@ -83,7 +83,12 @@ func build_command(delta: float) -> InputCommand:
 		return InputCommand.make(tick, Vector2.ZERO, 0, aim_vector())
 
 	_apply_stick_look(delta)
-	var cmd := InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector(), _axes_vector())
+	var cmd: InputCommand = null
+	if _is_piloting():
+		cmd = InputCommand.make(tick, _cyclic_vector(), _button_mask(), aim_vector(),
+			_heli_axes())
+	else:
+		cmd = InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector())
 	_latched_buttons = 0
 	_poll_dev_keys()
 	return cmd
@@ -142,10 +147,22 @@ func _bot_driver_command() -> InputCommand:
 	return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
 
 
-func _axes_vector() -> Vector2:
+func _is_piloting() -> bool:
+	var entity := GameClient.my_entity
+	return entity != null and is_instance_valid(entity) and entity.is_in_group("helicopter")
+
+
+func _cyclic_vector() -> Vector2:
 	return Vector2(
-		Input.get_action_strength("yaw_right") - Input.get_action_strength("yaw_left"),
-		Input.get_action_strength("collective_up") - Input.get_action_strength("collective_down"))
+		Input.get_action_strength("heli_roll_right") - Input.get_action_strength("heli_roll_left"),
+		Input.get_action_strength("heli_pitch_down") - Input.get_action_strength("heli_pitch_up"))
+
+
+func _heli_axes() -> Vector2:
+	return Vector2(
+		Input.get_action_strength("heli_yaw_right") - Input.get_action_strength("heli_yaw_left"),
+		Input.get_action_strength("heli_collective_up")
+			- Input.get_action_strength("heli_collective_down"))
 
 
 func _move_vector() -> Vector2:

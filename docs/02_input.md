@@ -40,15 +40,20 @@ Every gameplay action carries **both** a keyboard/mouse binding and an Xbox-layo
 
 ## Helicopter
 
+Revised at M6 to a flight-game pad layout. The cyclic moved to the **right** stick, yaw to the **left** stick, and collective to the **triggers**, which frees the shoulder buttons and face buttons for weapons and seats.
+
 | Action | Keyboard / mouse | Gamepad | Notes |
 |---|---|---|---|
-| `collective_up` / `collective_down` | Space / Ctrl | RT / LT | Lift |
-| `cyclic_forward` / `cyclic_back` | W / S | Left stick Y | Pitch |
-| `cyclic_left` / `cyclic_right` | A / D | Left stick X | Roll |
-| `yaw_left` / `yaw_right` | Q / E | LB / RB | Pedals |
-| `toggle_engine` | R | Y | Spool up / down |
-| `toggle_camera` | V | R3 | First-person ↔ chase cam |
+| `heli_collective_up` / `_down` | Space / Ctrl | RT / LT | Lift |
+| `heli_pitch_up` / `_down` | W / S | Right stick Y | Cyclic pitch |
+| `heli_roll_left` / `_right` | A / D | Right stick X | Cyclic roll |
+| `heli_yaw_left` / `_right` | Q / E | Left stick X | Pedals |
+| `toggle_camera` | V | R3 | Cockpit ↔ chase cam |
 | `exit_vehicle` | F | B | Only meaningful when landed (see 06) |
+
+Reserved, deliberately unbound until the features land: **RB** fire, **LB** zoom / secondary, **A** switch seats, **Y** weapon toggle. Left stick Y is unused in the heli. There is no engine button — see 06.
+
+The heli needs four analog channels (pitch, roll, yaw, collective) and `InputCommand` carries exactly four (`move.x/y`, `axes.x/y`), so no new network field was needed: `move` is the cyclic and `axes` is `(yaw, collective)`. The sampler fills them from the `heli_*` actions **only while the possessed entity is in the `helicopter` group**, which is why these are separate actions rather than rebindings of `move_*` — rebinding those would have moved infantry onto the right stick too.
 
 ## Look handling
 
