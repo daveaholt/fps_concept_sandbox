@@ -33,9 +33,9 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var fire_cooldown_time: float = 2.5
 @export var recoil_impulse: float = 9000.0
 @export var camera_pivot_height: float = 2.1
-@export var camera_spring_length: float = 7.0
+@export var camera_spring_length: float = 8.0
 @export var camera_pitch_min_deg: float = -8.0
-@export var camera_pitch_max_deg: float = 15.0
+@export var camera_pitch_max_deg: float = 20.0
 
 var owner_peer: int = 0
 var health: float = 500.0
@@ -273,8 +273,11 @@ func _update_camera() -> void:
 	var yaw := atan2(-flat.x, -flat.z)
 	var pitch := clampf(asin(clampf(_aim.normalized().y, -1.0, 1.0)),
 		deg_to_rad(camera_pitch_min_deg), deg_to_rad(camera_pitch_max_deg))
+	var arm_pitch := minf(pitch, 0.0)
 	_spring.global_position = global_position + Vector3.UP * camera_pivot_height
-	_spring.global_rotation = Vector3(pitch, yaw, 0.0)
+	_spring.global_rotation = Vector3(arm_pitch, yaw, 0.0)
+	if _camera != null:
+		_camera.rotation = Vector3(pitch - arm_pitch, 0.0, 0.0)
 
 
 func _drive(throttle: float, steer_input: float, braking: bool, delta: float) -> void:
