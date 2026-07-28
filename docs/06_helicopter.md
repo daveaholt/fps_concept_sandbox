@@ -31,10 +31,10 @@ Plus `linear_drag` (quadratic-ish via `linear_damp`) so top speed self-limits.
 |---|---|---|
 | `mass` | 2200 kg | |
 | `max_lift` | 1.35 × m·g | ≈ 29 kN |
-| `collective_rate` | 0.8 /s | |
+| `collective_rate` | ~~0.8~~ **1.8 /s** | Tuned at M6; 0.8 took 0.82 s to reach a 3 m/s descent, 1.8 takes 0.57 s |
 | `spool_rate` | 0.25 /s | |
-| `cyclic_torque` | 14000 N·m | Pitch & roll |
-| `pedal_torque` | 9000 N·m | |
+| `cyclic_torque` | ~~14000~~ **24000 N·m** | Pitch & roll. Tuned at M6 — raises cruise *and* turn response together |
+| `pedal_torque` | ~~9000~~ **20000 N·m** | 9000 gave only 15 deg/s; a 90° turn took six seconds |
 | `attitude_damping` | 3.0 | angular_damp equivalent |
 | `auto_level` | 0.35 | 0 = manual, 1 = self-leveling drone |
 | `linear_damp` | 0.15 | |
@@ -78,3 +78,6 @@ Rotor RPM %, collective %, altitude (ray-derived AGL), speed, climb rate, "Land 
 - M6: this is the second instance of the 04 note about client code assuming infantry, from the other direction — here it was *entity* code assuming the client. The rule that falls out: **anything that changes simulated state belongs on the server tick keyed off replicated state, never in a possess/unpossess hook.** Worth applying to heli weapons and passenger seats in M7.
 - M6: the HUD now shows rotor and collective percentages at all times rather than hiding them behind `can_hover()`. They were hidden exactly when they were most needed — while nothing was happening and the pilot wanted to know why.
 - M6: cyclic pitch is inverted in the flight-stick sense — **push forward for nose down**. It shipped backwards, and the reason no test caught it is worth recording: `verify_m6` pushes `move.y` straight into the entity, so it validated the *force model* while never touching the input map. Direction bugs live in the mapping, not the physics. `verify_heli_controls` now asserts what each physical control commands ("stick forward -> nose DOWN", "left stick right -> yaw RIGHT") rather than only which axis it is bound to.
+- M6 tuning: the sluggishness had two separate causes and the second one was not where it appeared to be. Yaw was genuinely weak — `pedal_torque` 9000 produced **15 deg/s**, so a 90° turn took six seconds; at 20000 it is 34 deg/s, reached in 0.18 s. Collective was rate-limited: 0.8/s meant **0.82 s** just to wind the lever down to a 3 m/s descent, now 0.57 s at 1.8/s.
+- M6 tuning: but "turns feel slow at speed" was mostly the **flight path lagging the nose**, not the yaw rate — with the nose swinging 116° in the first second, the velocity vector had moved 1°. The obvious lever, `linear_damp`, is a bad trade: it buys turn response by bleeding momentum, and going 0.15 → 1.2 cut the 45° path swing from over 5 s to 3.7 s while halving cruise from 63 to 30 km/h. `cyclic_torque` is the right lever because it lets the pilot point more of the 29 kN where they are going: at 24000 the path swings 45° in **2.9 s** and cruise *rises* to **91 km/h**. Both numbers improve together, which is the tell that it was the correct knob.
+- M6 tuning: `auto_level` needs no re-tune after the cyclic change — its torque is expressed as a fraction of `cyclic_torque`, so the assist scales with the authority it opposes. That was luck rather than design, and is worth keeping if either number moves again.
