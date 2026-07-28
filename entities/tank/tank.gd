@@ -22,7 +22,7 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var armour_side: float = 1.25
 @export var armour_rear: float = 2.0
 @export var armour_top: float = 1.5
-@export var deck_height: float = 1.1
+@export var deck_height: float = 1.5
 
 @export var shell_params_id: int = 2
 @export var fire_cooldown_time: float = 2.5
