@@ -3,6 +3,7 @@ extends Node
 const PLAYER_SCENE_PATH := "res://entities/player/player.tscn"
 const RESPAWN_DELAY := 2.0
 const MAX_BUFFERED_COMMANDS := 16
+const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
 
 signal server_started(port: int)
@@ -23,6 +24,7 @@ var _spawn_root: Node = null
 var _default_spawn: SpawnPoint = null
 var _player_scene: PackedScene = null
 var ballistics: BallisticsManager = null
+var _vehicles: Array = []
 
 
 func _ready() -> void:
@@ -99,6 +101,91 @@ func get_entity_count() -> int:
 	return _possession.size()
 
 
+func register_vehicle(vehicle: Node) -> void:
+	if not _vehicles.has(vehicle):
+		_vehicles.append(vehicle)
+	if ballistics != null:
+		ballistics.register_target(vehicle)
+
+
+func get_vehicles() -> Array:
+	return _vehicles
+
+
+func _find_vehicle(vehicle_name: String) -> Node:
+	for vehicle in _vehicles:
+		if is_instance_valid(vehicle) and vehicle.name == vehicle_name:
+			return vehicle
+	return null
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_enter_rpc(vehicle_name: String) -> void:
+	if is_active:
+		handle_enter_request(multiplayer.get_remote_sender_id(), _find_vehicle(vehicle_name))
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_exit_rpc() -> void:
+	if is_active:
+		handle_exit_request(multiplayer.get_remote_sender_id())
+
+
+func handle_enter_request(peer: int, vehicle: Node) -> void:
+	if not is_active:
+		return
+	if vehicle == null or not is_instance_valid(vehicle):
+		push_warning("[server] REJECTED enter from peer %d: unknown vehicle" % peer)
+		return
+
+	var occupant: Node = _possession.get(peer)
+	if occupant == null:
+		push_warning("[server] REJECTED enter from peer %d: peer is not deployed" % peer)
+		return
+	if occupant.is_in_group("vehicle"):
+		push_warning("[server] REJECTED enter from peer %d: already in a vehicle" % peer)
+		return
+	if vehicle.is_occupied():
+		push_warning("[server] REJECTED enter from peer %d: %s is occupied by peer %d"
+			% [peer, vehicle.name, vehicle.owner_peer])
+		return
+
+	var distance: float = occupant.global_position.distance_to(vehicle.global_position)
+	if distance > ENTER_RANGE:
+		push_warning("[server] REJECTED enter from peer %d: %.1f m away, limit %.1f"
+			% [peer, distance, ENTER_RANGE])
+		return
+
+	_release_entity(peer)
+	vehicle.owner_peer = peer
+	_bind(peer, vehicle)
+	print("[server] peer %d entered %s" % [peer, vehicle.name])
+
+
+func handle_exit_request(peer: int) -> void:
+	if not is_active:
+		return
+	var vehicle: Node = _possession.get(peer)
+	if vehicle == null or not vehicle.is_in_group("vehicle"):
+		push_warning("[server] REJECTED exit from peer %d: not in a vehicle" % peer)
+		return
+	if not vehicle.can_exit():
+		push_warning("[server] REJECTED exit from peer %d: %s cannot be exited now"
+			% [peer, vehicle.name])
+		return
+
+	var space := (vehicle as Node3D).get_world_3d().direct_space_state
+	var exit_transform: Transform3D = vehicle.common().pick_exit_transform(space)
+	vehicle.owner_peer = 0
+	vehicle.unpossess()
+	_possession.erase(peer)
+	_inputs.erase(peer)
+
+	var entity := _spawn_infantry(peer, exit_transform.origin, -exit_transform.basis.z)
+	if entity != null:
+		print("[server] peer %d exited %s at %v" % [peer, vehicle.name, exit_transform.origin])
+
+
 func get_starvation(peer_id: int) -> int:
 	return _starved.get(peer_id, 0)
 
@@ -115,12 +202,34 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	peer_left.emit(peer_id)
 
 
-func _release_peer(peer_id: int) -> void:
+func _release_entity(peer_id: int) -> void:
 	var entity: Node = _possession.get(peer_id)
-	if entity != null and is_instance_valid(entity):
+	if entity != null and is_instance_valid(entity) and not entity.is_in_group("vehicle"):
 		if ballistics != null:
 			ballistics.unregister_target(entity)
 		entity.queue_free()
+	_possession.erase(peer_id)
+
+
+func _bind(peer_id: int, entity: Node) -> void:
+	_possession[peer_id] = entity
+	_last_processed[peer_id] = _last_processed.get(peer_id, 0)
+	_starved[peer_id] = 0
+	if peer_id != 1:
+		GameClient.grant_possession.rpc_id(peer_id, entity.name)
+	possession_granted.emit(peer_id, entity)
+
+
+func _release_peer(peer_id: int) -> void:
+	var entity: Node = _possession.get(peer_id)
+	if entity != null and is_instance_valid(entity):
+		if entity.is_in_group("vehicle"):
+			entity.owner_peer = 0
+			entity.unpossess()
+		else:
+			if ballistics != null:
+				ballistics.unregister_target(entity)
+			entity.queue_free()
 	_possession.erase(peer_id)
 	_inputs.erase(peer_id)
 	_last_processed.erase(peer_id)
@@ -187,27 +296,31 @@ func deploy(peer_id: int, spawn_point: SpawnPoint = null) -> Node:
 	var offset := Vector3(cos(angle), 0.0, sin(angle)) * SPAWN_SPREAD if slot > 0 else Vector3.ZERO
 	var origin := point.global_position + offset
 
+	var entity := _spawn_infantry(peer_id, origin, -point.global_transform.basis.z)
+	print("[server] peer %d deployed at %s %v (%d entities)"
+		% [peer_id, point.display_name, origin, _possession.size()])
+	return entity
+
+
+func _spawn_infantry(peer_id: int, origin: Vector3, aim: Vector3) -> Node:
+	if _player_scene == null:
+		_player_scene = load(PLAYER_SCENE_PATH)
+	if _player_scene == null or _spawn_root == null:
+		return null
+
 	var entity := _player_scene.instantiate()
 	entity.name = "Player_%d" % peer_id
 	entity.owner_peer = peer_id
 	entity.position = origin
 	_spawn_root.add_child(entity, true)
 	entity.state.position = origin
-	entity.set_spawn_aim(-point.global_transform.basis.z)
+	entity.set_spawn_aim(aim)
 	entity.died.connect(entity_died)
 	entity.fired.connect(_on_entity_fired.bind(peer_id))
 	if ballistics != null:
 		ballistics.register_target(entity)
 
-	_possession[peer_id] = entity
-	_last_processed[peer_id] = 0
-	_starved[peer_id] = 0
-	print("[server] peer %d deployed at %s %v (%d entities)"
-		% [peer_id, point.display_name, origin, _possession.size()])
-
-	if peer_id != 1:
-		GameClient.grant_possession.rpc_id(peer_id, entity.name)
-	possession_granted.emit(peer_id, entity)
+	_bind(peer_id, entity)
 	return entity
 
 
@@ -291,8 +404,11 @@ func _broadcast_snapshot() -> void:
 	var entities := {}
 	for peer_id in _possession:
 		var entity: Node = _possession[peer_id]
-		if is_instance_valid(entity):
+		if is_instance_valid(entity) and not entity.is_in_group("vehicle"):
 			entities[entity.name] = entity.get_net_state()
+	for vehicle in _vehicles:
+		if is_instance_valid(vehicle):
+			entities[vehicle.name] = vehicle.get_net_state()
 
 	var snapshot := {"tick": tick, "entities": entities, "acks": _last_processed}
 	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
@@ -324,10 +440,3 @@ func entity_died(entity: Node) -> void:
 		GameClient.on_killed.rpc_id(peer_id)
 
 
-func handle_enter_request(peer: int, vehicle: Node) -> void:
-	push_warning("[server] handle_enter_request(peer %d, %s) is a stub until M5"
-		% [peer, vehicle.name if vehicle else "<null>"])
-
-
-func handle_exit_request(peer: int) -> void:
-	push_warning("[server] handle_exit_request(peer %d) is a stub until M5" % peer)

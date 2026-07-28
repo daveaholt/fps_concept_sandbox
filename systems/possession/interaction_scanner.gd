@@ -6,28 +6,66 @@ const ENTRY_GROUP := "vehicle_entry"
 @export var fallback_radius: float = 2.0
 
 var _last_prompt: String = ""
+var _interact_latch: bool = false
+var _exit_latch: bool = false
+var _target: Node = null
 
 
 func _physics_process(_delta: float) -> void:
 	var entity: Node = GameClient.my_entity
-	if entity == null or not entity.has_method("get_interact_target"):
+	if entity == null:
+		_emit("")
+		_target = null
+		return
+
+	if entity.is_in_group("vehicle"):
+		_emit("%s — F to exit" % entity.get_display_name())
+		_target = null
+		_poll_exit()
+		return
+
+	if not entity.has_method("get_interact_target"):
 		_emit("")
 		return
 
-	var target := _resolve(entity.get_interact_target())
-	if target == null:
-		target = _overlap_fallback(entity)
+	_target = _resolve(entity.get_interact_target())
+	if _target == null:
+		_target = _overlap_fallback(entity)
 
-	_emit("Enter %s [E]" % target.name if target != null else "")
+	_emit("Enter %s [E]" % _target.get_display_name() if _target != null else "")
+	_poll_enter()
+
+
+func _poll_enter() -> void:
+	var pressed := Input.is_action_pressed("interact")
+	if pressed and not _interact_latch and _target != null:
+		GameClient.request_enter(_target)
+	_interact_latch = pressed
+
+
+func _poll_exit() -> void:
+	var pressed := Input.is_action_pressed("exit_vehicle")
+	if pressed and not _exit_latch:
+		GameClient.request_exit()
+	_exit_latch = pressed
 
 
 func _resolve(hit: Node) -> Node:
 	var node := hit
 	while node != null:
 		if node.is_in_group(ENTRY_GROUP):
-			return node
+			return _vehicle_root(node)
 		node = node.get_parent()
 	return null
+
+
+func _vehicle_root(node: Node) -> Node:
+	var current := node
+	while current != null:
+		if current.is_in_group("vehicle"):
+			return current
+		current = current.get_parent()
+	return node
 
 
 func _overlap_fallback(entity: Node) -> Node:

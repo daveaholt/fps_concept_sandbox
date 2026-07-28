@@ -213,7 +213,7 @@ func grant_possession(entity_name: String) -> void:
 func _bind_pending() -> void:
 	if _pending_entity_name == "" or _players_root == null:
 		return
-	var entity := _players_root.get_node_or_null(NodePath(_pending_entity_name))
+	var entity := _find_replicated(_pending_entity_name)
 	if entity == null:
 		return
 	_pending_entity_name = ""
@@ -247,10 +247,20 @@ func _process(delta: float) -> void:
 	buffer.advance(delta)
 	var states := buffer.sample()
 	for entity_name in states:
-		var entity := _players_root.get_node_or_null(NodePath(entity_name))
+		var entity := _find_replicated(entity_name)
 		if entity != null and entity.has_method("apply_replicated_state"):
 			entity.apply_replicated_state(states[entity_name])
 	_trace(states)
+
+
+func _find_replicated(entity_name: String) -> Node:
+	var entity := _players_root.get_node_or_null(NodePath(entity_name))
+	if entity != null:
+		return entity
+	for vehicle in get_tree().get_nodes_in_group("vehicle"):
+		if vehicle.name == entity_name:
+			return vehicle
+	return null
 
 
 func _net_log(delta: float) -> void:
@@ -416,12 +426,19 @@ func _auto_deploy() -> void:
 
 
 func request_enter(vehicle: Node) -> void:
-	push_warning("[client] request_enter(%s) is a stub until M5"
-		% [vehicle.name if vehicle else "<null>"])
+	if vehicle == null:
+		return
+	if GameServer.is_active:
+		GameServer.handle_enter_request(get_peer_id(), vehicle)
+	elif can_rpc():
+		GameServer.request_enter_rpc.rpc_id(1, vehicle.name)
 
 
 func request_exit() -> void:
-	push_warning("[client] request_exit() is a stub until M5")
+	if GameServer.is_active:
+		GameServer.handle_exit_request(get_peer_id())
+	elif can_rpc():
+		GameServer.request_exit_rpc.rpc_id(1)
 
 
 func request_deploy_map(open: bool) -> void:

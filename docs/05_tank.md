@@ -27,11 +27,12 @@ right_force = (throttle - steer * steer_authority) * max_engine_force
 
 | Export | Default | Notes |
 |---|---|---|
-| `max_engine_force` | 6000 N | Total per side at full throttle |
-| `pivot_force` | 4000 N | Neutral-steer force per side |
+| `max_engine_force` | ~~6000~~ **14000 N** | Total per side at full throttle. 6000 could not climb the doc's own 20° criterion — see tuning note below |
+| `pivot_force` | ~~4000~~ **10000 N** | Neutral-steer force per side |
+| `max_yaw_rate` / `yaw_accel` | 1.0 rad/s · 3.0 rad/s² | **New.** Yaw is driven as a rate, not produced by wheel forces — see below |
 | `steer_authority` | 0.6 → 0.25 | Lerped from 0 to `max_speed` |
 | `max_speed` | 14 m/s | ~50 km/h |
-| `brake_force` / `idle_brake` | 60 / 8 | Godot brake units per wheel |
+| `brake_force` / `idle_brake` | ~~60 / 8~~ **200 / 90** | Godot brake units per wheel; 8 could not hold a grade |
 | `wheel_suspension_stiffness` | 40.0 | Firm; it's a tank |
 | `wheel_suspension_travel` | 0.3 m | |
 | `wheel_friction_slip` | 3.0 | High grip; treads shouldn't drift |
@@ -75,3 +76,14 @@ Speed (km/h), turret-vs-hull compass ghost, reload pip, predicted-impact marker 
 - Neutral-steers in place; at full speed A/D produces a wide controlled arc, not a spin.
 - Turret tracks camera smoothly; shells follow a visible arc and land on the predicted-impact marker (±1 m on flat ground).
 - Stationary on a 15° slope with no input (idle brake holds).
+
+## Tuning notes (M5)
+
+Two numbers in the table above could not meet this doc's own acceptance criteria and were raised, measured rather than guessed:
+
+- **`max_engine_force` 6000 → 14000 N.** A 4000 kg hull on a 20° grade needs `m·g·sin20° ≈ 13.4 kN` merely to hold station. Two sides at 6000 N gave 12 kN — short before any acceleration — so the tank slid *down* the test ramp. At 14000 it climbs +5.9 m from a standstill.
+- **`idle_brake` 8 → 90** (and `brake_force` 60 → 200). At 8 the tank slid 7 m in 2 s on the ramp; at 90 it holds to 0.18 m.
+
+**Steering is a rate, not a force — a deviation from the model above.** This doc specifies that turning emerges from differential `engine_force` with no steering wheels, and that neutral steer comes from opposing per-side forces. In Godot's `VehicleBody3D` that does not work: its raycast wheels rigidly resist yaw. Measured with all six wheels in ground contact and ±10 kN opposed per side, the hull reached **0.032 rad/s and stopped accelerating** — a stationary pivot never develops. `wheel_friction_slip` is not the lever: sweeping it from 3.0 to 0.15, a 20× change, moved grounded yaw by nothing at all (0.014 rad/s at every value). `apply_torque` is not the lever either: the same torque spins the hull to 1.46 rad/s while airborne, so the wheels are absorbing it, not the body refusing it.
+
+What does work is driving `angular_velocity.y` toward a target rate: 0.887 rad/s held against a 0.9 target with zero translation. So the tank keeps the differential `engine_force` model for *drive* — it is what climbs, accelerates and governs — and yaw is driven kinematically at `max_yaw_rate`, scaled by the existing speed-sensitive `steer_authority` so full-speed turns stay wide arcs (0.25 rad/s at top speed) and stationary pivots are brisk (1.0 rad/s). The *feel* this doc asks for is preserved; the mechanism underneath is not the one it describes, because that mechanism does not exist in this engine.

@@ -8,4 +8,6 @@ func _ready() -> void:
 	var ballistics: BallisticsManager = get_node_or_null("Ballistics")
 
 	GameServer.register_level(players, main_base, ballistics)
+	for vehicle in get_node("Vehicles").get_children():
+		GameServer.register_vehicle(vehicle)
 	GameClient.register_level(players, ballistics)

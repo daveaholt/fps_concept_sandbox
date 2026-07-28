@@ -20,8 +20,10 @@
 [ext_resource type="Resource" path="res://entities/player/infantry_hit_zones.tres" id="15_q0vl7"]
 [ext_resource type="Script" path="res://levels/sandbox/dev_overlay.gd" id="17_v2ya2"]
 [ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="18_tx1dy"]
+[ext_resource type="PackedScene" path="res://entities/tank/tank.tscn" id="19_aj57l"]
 [ext_resource type="Script" path="res://systems/ballistics/ballistics_manager.gd" id="19_ia0wb"]
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="19_p1wtp"]
+[ext_resource type="Script" path="res://entities/tank/tank.gd" id="20_nnn8o"]
 [ext_resource type="PackedScene" path="res://ui/deploy_map/deploy_map.tscn" id="22_q0vl7"]
 [ext_resource type="Script" path="res://ui/deploy_map/deploy_map.gd" id="23_2l4r6"]
 
@@ -623,17 +625,6 @@ height = 0.2
 [sub_resource type="BoxMesh" id="BoxMesh_rl266"]
 material = ExtResource("5_p1wtp")
 size = Vector3(0.25, 5, 0.25)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_hwij6"]
-size = Vector3(3.4, 2.2, 5.4)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kamv1"]
-albedo_color = Color(0.3, 0.34, 0.24, 1)
-roughness = 0.9
-
-[sub_resource type="BoxMesh" id="BoxMesh_q0vl7"]
-material = SubResource("StandardMaterial3D_kamv1")
-size = Vector3(3, 1.8, 5)
 
 [node name="Sandbox" type="Node3D" unique_id=340252235]
 script = ExtResource("1_ia0wb")
@@ -1471,6 +1462,14 @@ outline_size = 16
 
 [node name="Vehicles" type="Node3D" parent="." unique_id=1679540455]
 
+[node name="Tank" type="VehicleBody3D" parent="Vehicles" unique_id=698796726 instance=ExtResource("19_aj57l")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0.8, 40)
+collision_layer = 4
+mass = 4000.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, -0.4, 0)
+script = ExtResource("20_nnn8o")
+
 [node name="DevOverlay" type="CanvasLayer" parent="." unique_id=1324878947]
 
 [node name="NetStatus" type="Label" parent="DevOverlay" unique_id=383491466]
@@ -1506,31 +1505,9 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("23_2l4r6")
-
-[node name="TestVehicle" type="Area3D" parent="." unique_id=1749422891 groups=["vehicle_entry"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 58)
-collision_layer = 16
-collision_mask = 0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TestVehicle" unique_id=2091650271]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
-shape = SubResource("BoxShape3D_hwij6")
-
-[node name="Visual" type="Node3D" parent="TestVehicle" unique_id=1974903389]
-
-[node name="Hull" type="MeshInstance3D" parent="TestVehicle/Visual" unique_id=1271468322]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("BoxMesh_q0vl7")
-
-[node name="Sign" type="Label3D" parent="TestVehicle" unique_id=1440971288]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, 0)
-pixel_size = 0.00625
-billboard = 1
-modulate = Color(0.7, 0.95, 1, 1)
-text = "interact test"
-font_size = 128
-outline_size = 16
 
 [node name="Ballistics" type="Node3D" parent="." unique_id=2040110321]
 script = ExtResource("19_ia0wb")

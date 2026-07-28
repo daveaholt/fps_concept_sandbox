@@ -1,0 +1,172 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://entities/tank/tank.gd" id="1_cbkxa"]
+[ext_resource type="Script" path="res://systems/possession/vehicle_common.gd" id="2_0syse"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_axr6c"]
+size = Vector3(3.4, 1.4, 6.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eykj3"]
+albedo_color = Color(0.2, 0.22, 0.18, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_cxr3h"]
+material = SubResource("StandardMaterial3D_eykj3")
+size = Vector3(0.28, 0.28, 3.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lx22l"]
+albedo_color = Color(0.34, 0.38, 0.27, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_422qp"]
+material = SubResource("StandardMaterial3D_lx22l")
+size = Vector3(2.4, 0.9, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3oten"]
+size = Vector3(5, 3, 7.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_17p3m"]
+albedo_color = Color(0.31, 0.35, 0.25, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_f0hnj"]
+material = SubResource("StandardMaterial3D_17p3m")
+size = Vector3(3.2, 1.2, 6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1x70j"]
+albedo_color = Color(0.15, 0.15, 0.16, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_htklb"]
+material = SubResource("StandardMaterial3D_1x70j")
+size = Vector3(0.7, 0.8, 6.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ckajw"]
+albedo_color = Color(0.15, 0.15, 0.16, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_yxiug"]
+material = SubResource("StandardMaterial3D_ckajw")
+size = Vector3(0.7, 0.8, 6.2)
+
+[node name="Tank" type="VehicleBody3D" unique_id=698796726]
+collision_layer = 4
+mass = 4000.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, -0.4, 0)
+script = ExtResource("1_cbkxa")
+
+[node name="HullShape" type="CollisionShape3D" parent="." unique_id=1986440919]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("BoxShape3D_axr6c")
+
+[node name="WheelL0" type="VehicleWheel3D" parent="." unique_id=387309375]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, -2)
+use_as_traction = true
+wheel_radius = 0.45
+wheel_friction_slip = 3.0
+suspension_travel = 0.3
+suspension_stiffness = 40.0
+damping_compression = 0.6
+damping_relaxation = 0.8
+
+[node name="WheelL1" type="VehicleWheel3D" parent="." unique_id=177097340]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, 0)
+use_as_traction = true
+wheel_radius = 0.45
+wheel_friction_slip = 3.0
+suspension_travel = 0.3
+suspension_stiffness = 40.0
+damping_compression = 0.6
+damping_relaxation = 0.8
+
+[node name="WheelL2" type="VehicleWheel3D" parent="." unique_id=1890506069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.35, 2)
+use_as_traction = true
+wheel_radius = 0.45
+wheel_friction_slip = 3.0
+suspension_travel = 0.3
+suspension_stiffness = 40.0
+damping_compression = 0.6
+damping_relaxation = 0.8
+
+[node name="WheelR0" type="VehicleWheel3D" parent="." unique_id=1052221527]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, -2)
+use_as_traction = true
+wheel_radius = 0.45
+wheel_friction_slip = 3.0
+suspension_travel = 0.3
+suspension_stiffness = 40.0
+damping_compression = 0.6
+damping_relaxation = 0.8
+
+[node name="WheelR1" type="VehicleWheel3D" parent="." unique_id=1813351441]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, 0)
+use_as_traction = true
+wheel_radius = 0.45
+wheel_friction_slip = 3.0
+suspension_travel = 0.3
+suspension_stiffness = 40.0
+damping_compression = 0.6
+damping_relaxation = 0.8
+
+[node name="WheelR2" type="VehicleWheel3D" parent="." unique_id=700103014]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 0.35, 2)
+use_as_traction = true
+wheel_radius = 0.45
+wheel_friction_slip = 3.0
+suspension_travel = 0.3
+suspension_stiffness = 40.0
+damping_compression = 0.6
+damping_relaxation = 0.8
+
+[node name="TurretYaw" type="Node3D" parent="." unique_id=1275864586]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -0.2)
+
+[node name="CannonPitch" type="Node3D" parent="TurretYaw" unique_id=260555308]
+
+[node name="Muzzle" type="Marker3D" parent="TurretYaw/CannonPitch" unique_id=1241629848]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.6)
+
+[node name="BarrelVisual" type="Node3D" parent="TurretYaw/CannonPitch" unique_id=1156460967]
+
+[node name="Barrel" type="MeshInstance3D" parent="TurretYaw/CannonPitch/BarrelVisual" unique_id=1465606855]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, -1.9)
+mesh = SubResource("BoxMesh_cxr3h")
+
+[node name="TurretVisual" type="Node3D" parent="TurretYaw" unique_id=1672584800]
+
+[node name="Turret" type="MeshInstance3D" parent="TurretYaw/TurretVisual" unique_id=1626791229]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0.3)
+mesh = SubResource("BoxMesh_422qp")
+
+[node name="VehicleCommon" type="Node" parent="." unique_id=1878385704]
+script = ExtResource("2_0syse")
+
+[node name="EntryZone" type="Area3D" parent="VehicleCommon" unique_id=1507308054]
+collision_layer = 16
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="VehicleCommon/EntryZone" unique_id=1829051098]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("BoxShape3D_3oten")
+
+[node name="ExitPoint" type="Marker3D" parent="VehicleCommon" unique_id=2015647190]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.2, 0)
+
+[node name="ExitPointAlt" type="Marker3D" parent="VehicleCommon" unique_id=1260986259]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.2, 0)
+
+[node name="Visual" type="Node3D" parent="." unique_id=1606155374]
+
+[node name="Hull" type="MeshInstance3D" parent="Visual" unique_id=675661695]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("BoxMesh_f0hnj")
+
+[node name="TrackL" type="MeshInstance3D" parent="Visual" unique_id=2039394533]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.55, 0.45, 0)
+mesh = SubResource("BoxMesh_htklb")
+
+[node name="TrackR" type="MeshInstance3D" parent="Visual" unique_id=1830548849]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.55, 0.45, 0)
+mesh = SubResource("BoxMesh_yxiug")
