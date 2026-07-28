@@ -205,7 +205,9 @@ func _accept_snapshot(snapshot: Dictionary) -> void:
 
 @rpc("authority", "call_remote", "unreliable")
 func spawn_tracer(origin: Vector3, direction: Vector3, params_id: int, shooter_peer: int) -> void:
-	if ballistics == null or shooter_peer == get_peer_id():
+	if ballistics == null:
+		return
+	if shooter_peer == get_peer_id() and is_predicting():
 		return
 	ballistics.spawn(origin, direction, params_id, shooter_peer, 0.0)
 
