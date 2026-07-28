@@ -11,6 +11,11 @@ const DEFAULT_PORT := 27015
 const DEFAULT_ADDRESS := "127.0.0.1"
 const MAX_PEERS := 8
 
+const TICK_RATE := 60
+const SNAPSHOT_EVERY_TICKS := 3
+const INTERP_DELAY_MS := 100.0
+const COMMAND_REDUNDANCY := 4
+
 
 static func all_args() -> PackedStringArray:
 	var args := OS.get_cmdline_args()
@@ -24,6 +29,30 @@ static func is_tool_run() -> bool:
 
 static func is_net_log() -> bool:
 	return all_args().has("--net-log")
+
+
+static func is_bot() -> bool:
+	return all_args().has("--bot")
+
+
+static func is_net_trace() -> bool:
+	return all_args().has("--net-trace")
+
+
+static func get_latency_rtt_ms() -> float:
+	return maxf(0.0, _flag_value("--latency", "0").to_float())
+
+
+static func get_jitter_ms() -> float:
+	return maxf(0.0, _flag_value("--jitter", "0").to_float())
+
+
+static func get_loss() -> float:
+	return clampf(_flag_value("--loss", "0").to_float(), 0.0, 1.0)
+
+
+static func shim_enabled() -> bool:
+	return get_latency_rtt_ms() > 0.0 or get_jitter_ms() > 0.0 or get_loss() > 0.0
 
 
 static func get_mode() -> Mode:

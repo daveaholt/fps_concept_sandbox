@@ -51,4 +51,4 @@ Use the `_console` build when you need stdout; the plain `.exe` swallows it.
 
 ## Status
 
-Current milestone status is the table in `README.md`. **M1 is closed** (tag `m1`); **M2** (replication core) is next.
+Current milestone status is the table in `README.md`. **M2 is closed** (tag `m2`); **M3** (prediction, reconciliation, ballistics) is next.

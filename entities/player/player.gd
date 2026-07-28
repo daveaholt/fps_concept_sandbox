@@ -13,7 +13,6 @@ var _head: Node3D
 var _camera: Camera3D
 var _interact_ray: RayCast3D
 var _muzzle_flash: MeshInstance3D
-var _visual_body: Node3D
 var _visual_weapon: Node3D
 
 var _pending: Array[InputCommand] = []
@@ -32,7 +31,6 @@ func _ready() -> void:
 	_camera = get_node_or_null("Head/Camera3D")
 	_interact_ray = get_node_or_null("Head/InteractRay")
 	_muzzle_flash = get_node_or_null("Head/Muzzle/Flash")
-	_visual_body = get_node_or_null("Visual/Body")
 	_visual_weapon = get_node_or_null("Visual/WeaponProxy")
 
 	if tuning == null:
@@ -40,6 +38,7 @@ func _ready() -> void:
 	tuning.gravity = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
 	state.position = global_position
+	_shots_seen = state.shots_fired
 	_set_flash_visible(false)
 
 
@@ -86,6 +85,25 @@ func get_active_weapon() -> WeaponDef:
 	return tuning.weapon_at(state.weapon_index) if tuning != null else null
 
 
+func get_net_state() -> Dictionary:
+	return {
+		"p": state.position,
+		"a": _aim,
+		"w": state.weapon_index,
+		"h": state.health,
+		"s": state.shots_fired,
+	}
+
+
+func apply_replicated_state(net_state: Dictionary) -> void:
+	state.position = net_state.get("p", state.position)
+	state.weapon_index = net_state.get("w", state.weapon_index)
+	state.health = net_state.get("h", state.health)
+	state.shots_fired = net_state.get("s", state.shots_fired)
+	_aim = net_state.get("a", _aim)
+	global_position = state.position
+
+
 func apply_damage(amount: float) -> void:
 	if not _is_server():
 		return
@@ -108,7 +126,9 @@ func _physics_process(delta: float) -> void:
 		_aim = cmd.aim
 		global_position = state.position
 		velocity = state.velocity
-		sync_pose.rpc(state.position, _aim, state.weapon_index)
+
+
+func _process(delta: float) -> void:
 	_apply_pose(delta)
 
 
@@ -142,11 +162,3 @@ func _apply_pose(delta: float) -> void:
 func _set_flash_visible(visible_now: bool) -> void:
 	if _muzzle_flash != null:
 		_muzzle_flash.visible = visible_now
-
-
-@rpc("authority", "call_remote", "unreliable")
-func sync_pose(p: Vector3, aim: Vector3, weapon_index: int) -> void:
-	state.position = p
-	state.weapon_index = weapon_index
-	_aim = aim
-	global_position = p

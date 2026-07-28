@@ -83,12 +83,23 @@ func _physics_process(delta: float) -> void:
 		_latched_buttons = 0
 		return
 
-	_apply_stick_look(delta)
 	tick += 1
+	if NetCli.is_bot():
+		GameClient.send_command(_bot_command())
+		return
+
+	_apply_stick_look(delta)
 	var cmd := InputCommand.make(tick, _move_vector(), _button_mask(), aim_vector())
 	_latched_buttons = 0
 	GameClient.send_command(cmd)
 	_poll_dev_keys()
+
+
+func _bot_command() -> InputCommand:
+	var phase := float(tick) / float(NetCli.TICK_RATE)
+	yaw = wrapf(phase * 1.6, -PI, PI)
+	pitch = 0.0
+	return InputCommand.make(tick, Vector2(0.0, 1.0), 0, aim_vector())
 
 
 func _move_vector() -> Vector2:

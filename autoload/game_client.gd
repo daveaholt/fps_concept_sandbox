@@ -17,10 +17,19 @@ var state: State = State.OFFLINE
 
 var sampler: InputSampler = null
 var window: WindowMode = null
+var shim: NetShim = null
+var buffer := SnapshotBuffer.new()
 
 var _address: String = ""
 var _port: int = 0
 var _connecting_for: float = 0.0
+var _outbox: Array[InputCommand] = []
+var _players_root: Node = null
+var _pending_entity_name: String = ""
+var _acked_tick: int = 0
+var _log_countdown: float = 1.0
+var _uptime: float = 0.0
+var _peer_id: int = 0
 
 
 func _ready() -> void:
@@ -43,6 +52,11 @@ func _ready() -> void:
 
 
 func _start_local_systems() -> void:
+	shim = NetShim.new()
+	shim.name = "NetShim"
+	add_child(shim)
+	shim.configure_from_cli()
+
 	sampler = InputSampler.new()
 	sampler.name = "InputSampler"
 	add_child(sampler)
@@ -54,6 +68,16 @@ func _start_local_systems() -> void:
 	window = WindowMode.new()
 	window.name = "WindowMode"
 	add_child(window)
+
+
+func register_level(players_root: Node) -> void:
+	_players_root = players_root
+	if not is_active:
+		return
+	if GameServer.is_active:
+		GameServer.deploy(get_peer_id())
+	elif can_rpc():
+		GameServer.client_ready.rpc_id(1)
 
 
 func _connect_to(address: String, port: int) -> void:
@@ -76,24 +100,116 @@ func _connect_to(address: String, port: int) -> void:
 	print("[client] connecting to %s:%d ..." % [address, port])
 
 
-func _process(delta: float) -> void:
-	if state != State.CONNECTING:
-		return
-	_connecting_for += delta
-	if _connecting_for >= CONNECT_TIMEOUT_SEC:
-		push_error("[client] no response from %s:%d after %.0f s — wrong address, server not running, or firewalled"
-			% [_address, _port, CONNECT_TIMEOUT_SEC])
-		_set_state(State.FAILED)
-
-
 func send_command(cmd: InputCommand) -> void:
+	_outbox.append(cmd)
+	while _outbox.size() > NetCli.COMMAND_REDUNDANCY:
+		_outbox.pop_front()
+
+	var bundle: Array = []
+	for queued in _outbox:
+		bundle.append(queued.to_dict())
+
 	if GameServer.is_active:
-		GameServer.submit_command(get_peer_id(), cmd)
+		GameServer.submit_local_commands(get_peer_id(), bundle)
+	elif can_rpc():
+		shim.dispatch(_send_bundle, [bundle])
+
+
+func can_rpc() -> bool:
+	if state != State.CONNECTED or multiplayer.multiplayer_peer == null:
+		return false
+	return multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
+
+
+func _send_bundle(bundle: Array) -> void:
+	if can_rpc():
+		GameServer.receive_commands.rpc_id(1, bundle)
+
+
+@rpc("authority", "call_remote", "unreliable")
+func receive_snapshot(snapshot: Dictionary) -> void:
+	shim.dispatch(_accept_snapshot, [snapshot])
+
+
+func _accept_snapshot(snapshot: Dictionary) -> void:
+	buffer.push(snapshot)
+	var acks: Dictionary = snapshot.get("acks", {})
+	_acked_tick = acks.get(get_peer_id(), _acked_tick)
+
+
+@rpc("authority", "call_remote", "reliable")
+func grant_possession(entity_name: String) -> void:
+	_pending_entity_name = entity_name
+	_bind_pending()
+
+
+func _bind_pending() -> void:
+	if _pending_entity_name == "" or _players_root == null:
+		return
+	var entity := _players_root.get_node_or_null(NodePath(_pending_entity_name))
+	if entity == null:
+		return
+	_pending_entity_name = ""
+	set_my_entity(entity)
+
+
+func get_acked_tick() -> int:
+	return _acked_tick
+
+
+func _process(delta: float) -> void:
+	if state == State.CONNECTING:
+		_connecting_for += delta
+		if _connecting_for >= CONNECT_TIMEOUT_SEC:
+			push_error("[client] no response from %s:%d after %.0f s — wrong address, server not running, or firewalled"
+				% [_address, _port, CONNECT_TIMEOUT_SEC])
+			_set_state(State.FAILED)
+
+	if _pending_entity_name != "":
+		_bind_pending()
+
+	if GameServer.is_active or _players_root == null:
+		return
+
+	_uptime += delta
+	_net_log(delta)
+	buffer.advance(delta)
+	var states := buffer.sample()
+	for entity_name in states:
+		var entity := _players_root.get_node_or_null(NodePath(entity_name))
+		if entity != null and entity.has_method("apply_replicated_state"):
+			entity.apply_replicated_state(states[entity_name])
+	_trace(states)
+
+
+func _net_log(delta: float) -> void:
+	if not NetCli.is_net_log():
+		return
+	_log_countdown -= delta
+	if _log_countdown > 0.0:
+		return
+	_log_countdown = 1.0
+	print("[net] snapshots=%d rate=%.1f/s buffer=%d lag=%.1ft reorder=%d resync=%d acked=%d entities=%d dropped=%d"
+		% [buffer.received, buffer.received / maxf(_uptime, 0.001), buffer.depth(), buffer.lag_ticks(),
+			buffer.out_of_order, buffer.resyncs, _acked_tick,
+			_players_root.get_child_count() if _players_root != null else 0,
+			shim.dropped if shim != null else 0])
+
+
+func _trace(states: Dictionary) -> void:
+	if not NetCli.is_net_trace():
+		return
+	var stamp := Time.get_ticks_msec()
+	for entity_name in states:
+		var p: Vector3 = states[entity_name]["p"]
+		print("TRACE %d %s %.4f %.4f %.4f %d" % [stamp, entity_name, p.x, p.y, p.z, _players_root.get_child_count()])
 
 
 func request_dev_damage(amount: float) -> void:
 	if GameServer.is_active:
 		GameServer.apply_dev_damage(get_peer_id(), amount)
+	elif can_rpc():
+		GameServer.request_dev_damage.rpc_id(1, amount)
 
 
 func _on_possession_granted(peer_id: int, entity: Node) -> void:
@@ -127,9 +243,10 @@ func get_port() -> int:
 
 
 func get_peer_id() -> int:
-	if multiplayer.multiplayer_peer == null:
-		return 0
-	return multiplayer.get_unique_id()
+	var peer := multiplayer.multiplayer_peer
+	if peer != null and peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED:
+		_peer_id = multiplayer.get_unique_id()
+	return _peer_id
 
 
 func _set_state(next: State) -> void:
@@ -142,6 +259,8 @@ func _set_state(next: State) -> void:
 func _on_connected() -> void:
 	print("[client] connected to %s:%d as peer %d" % [_address, _port, multiplayer.get_unique_id()])
 	_set_state(State.CONNECTED)
+	if _players_root != null and can_rpc():
+		GameServer.client_ready.rpc_id(1)
 
 
 func _on_connection_failed() -> void:

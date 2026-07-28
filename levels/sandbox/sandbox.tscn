@@ -15,7 +15,6 @@
 [ext_resource type="Material" path="res://assets/materials/zone_torso.tres" id="12_tq6jb"]
 [ext_resource type="Material" path="res://assets/materials/zone_limb.tres" id="13_tmxet"]
 [ext_resource type="Script" path="res://systems/spawning/spawn_point.gd" id="14_ct1gt"]
-[ext_resource type="Script" path="res://levels/sandbox/net_demo.gd" id="15_6lnam"]
 [ext_resource type="Script" path="res://levels/sandbox/dev_overlay.gd" id="17_v2ya2"]
 [ext_resource type="PackedScene" path="res://ui/hud/hud.tscn" id="18_tx1dy"]
 [ext_resource type="Script" path="res://ui/hud/hud.gd" id="19_p1wtp"]
@@ -1463,15 +1462,6 @@ outline_size = 16
 
 [node name="Vehicles" type="Node3D" parent="." unique_id=1679540455]
 
-[node name="NetDemo" type="Node3D" parent="." unique_id=1396443068]
-script = ExtResource("15_6lnam")
-
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="NetDemo" unique_id=470115854]
-_spawnable_scenes = PackedStringArray("res://entities/net_demo/bouncing_ball.tscn")
-spawn_path = NodePath("../Spawned")
-
-[node name="Spawned" type="Node3D" parent="NetDemo" unique_id=984082200]
-
 [node name="DevOverlay" type="CanvasLayer" parent="." unique_id=1324878947]
 
 [node name="NetStatus" type="Label" parent="DevOverlay" unique_id=383491466]
@@ -1497,6 +1487,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("19_p1wtp")
 

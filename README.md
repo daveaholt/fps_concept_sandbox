@@ -25,7 +25,19 @@ Game arguments go **after** the `--` separator; anything before it is for the en
 | Dedicated server | `godot --headless --path . -- --server` |
 | Client | `godot --path . -- --client --connect <ip>` |
 
-Options: `--port <n>` (default 27015), `--net-log` (print replication traffic to stdout, so a two-instance test can be checked from two consoles).
+Options:
+
+| Flag | Meaning |
+|---|---|
+| `--port <n>` | Port, default 27015 |
+| `--latency <ms>` | Simulated **round-trip** latency, split half each way |
+| `--jitter <ms>` | Latency variance |
+| `--loss <0..1>` | Packet loss, e.g. `0.02` for 2% |
+| `--bot` | Drive the client with synthetic input (walks a circle) |
+| `--net-log` | Once-a-second replication stats to stdout |
+| `--net-trace` | Per-frame position trace, for measuring smoothness |
+
+The networked milestone gates are run under `--latency 100 --jitter 20 --loss 0.02`, not on a perfect loopback.
 
 Design range is 2–8 players over direct IP. There is no lobby, matchmaking or NAT punchthrough — use an IP or a VPN-LAN.
 
@@ -109,8 +121,8 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 |---|---|---|
 | M0 | Project bones + net bootstrap | **Done** (`m0`) |
 | M1 | Infantry simulation, host mode | **Done** (`m1`) |
-| M2 | Replication core | Next |
-| M3 | Prediction, reconciliation, ballistics | |
+| M2 | Replication core | **Done** (`m2`) |
+| M3 | Prediction, reconciliation, ballistics | Next |
 | M4 | Deploy map + death loop | |
 | M5 | Vehicle framework + tank | |
 | M6 | Helicopter | |
@@ -120,11 +132,10 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 
 Throwaway pieces that exist only until the milestone that replaces them. Delete them then:
 
-- `entities/net_demo/` + `levels/sandbox/net_demo.gd` — the bouncing probe ball, replaced by the real snapshot pipeline at **M2**. The player pose currently rides the same naive per-tick RPC and goes the same way.
 - `levels/sandbox/dev_overlay.gd` — net status readout, replaced by the HUD at **M4**
 - `TestVehicle` in `sandbox.tscn` — an empty `vehicle_entry` volume so the interaction prompt is testable before a real vehicle exists at **M5**
 
-`levels/sandbox/dev_camera.gd` was deleted at M1, replaced by the possessed player's own camera.
+Already retired: `dev_camera.gd` at M1 (replaced by the possessed player's camera), and the `net_demo` probe ball at M2 (replaced by the snapshot pipeline).
 
 ## Verifying a change
 
