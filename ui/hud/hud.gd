@@ -126,6 +126,18 @@ func _helicopter_panel() -> void:
 		_entity.get_display_name(), _entity.speed_kmh(),
 		_entity.altitude_agl(), _entity.climb_rate()]
 
+	var seat: int = _entity.seat_of(GameClient.get_peer_id())
+	if seat == 1:
+		_health_label.text = "%s   GUNNER   %.0f m AGL" % [
+			_entity.get_display_name(), _entity.altitude_agl()]
+		_weapon_label.text = "Minigun — RB   heat %.0f%%%s" % [
+			_entity.gun_heat() * 100.0,
+			"   OVERHEATED" if _entity.gun_heat() >= 1.0 else ""]
+		_draw_bar.visible = true
+		_draw_bar.value = _entity.gun_heat() * 100.0
+		_crosshair.modulate.a = 1.0
+		return
+
 	var rotor: float = _entity.rotor_fraction()
 	var gauges := "Rotor %.0f%%   Collective %.0f%%" % [
 		rotor * 100.0, _entity.collective_fraction() * 100.0]
@@ -134,7 +146,7 @@ func _helicopter_panel() -> void:
 	elif _entity.exit_refusal() != "":
 		gauges += "   %s" % _entity.exit_refusal()
 	else:
-		gauges += "   F — exit"
+		gauges += "   Rockets %d/%d" % [_entity.rockets_left(), _entity.rocket_salvo]
 	_weapon_label.text = gauges
 
 	_draw_bar.visible = true
@@ -145,8 +157,18 @@ func _helicopter_panel() -> void:
 func _vehicle_panel() -> void:
 	_health_label.text = "%s   %.0f km/h" % [_entity.get_display_name(), _entity.speed_kmh()]
 
+	var seat: int = _entity.seat_of(GameClient.get_peer_id())
+	if seat == 1:
+		_weapon_label.text = "MG — RB   heat %.0f%%%s" % [
+			_entity.gun_heat() * 100.0,
+			"   OVERHEATED" if _entity.gun_heat() >= 1.0 else ""]
+		_draw_bar.visible = true
+		_draw_bar.value = _entity.gun_heat() * 100.0
+		_crosshair.modulate.a = 1.0
+		return
+
 	var reload: float = _entity.reload_fraction()
-	_weapon_label.text = "Cannon ready — LMB" if reload >= 1.0 else "Reloading"
+	_weapon_label.text = "Cannon ready — RB" if reload >= 1.0 else "Reloading"
 	_draw_bar.visible = reload < 1.0
 	_draw_bar.value = reload * 100.0
 

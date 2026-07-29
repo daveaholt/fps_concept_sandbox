@@ -10,6 +10,8 @@ const TRACER_BASE_WIDTH := 0.06
 	"res://assets/ballistics/rifle_round.tres",
 	"res://assets/ballistics/pistol_round.tres",
 	"res://assets/ballistics/tank_shell.tres",
+	"res://assets/ballistics/minigun_round.tres",
+	"res://assets/ballistics/rocket.tres",
 ]
 
 var authoritative: bool = false

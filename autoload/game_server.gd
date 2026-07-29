@@ -137,6 +137,8 @@ func register_vehicle(vehicle: Node) -> void:
 		_vehicles.append(vehicle)
 		if vehicle.has_signal("fired"):
 			vehicle.fired.connect(_on_vehicle_fired.bind(vehicle))
+		if vehicle.has_signal("gun_fired"):
+			vehicle.gun_fired.connect(_on_vehicle_gun_fired.bind(vehicle))
 	if ballistics != null:
 		ballistics.register_target(vehicle)
 
@@ -145,6 +147,18 @@ func _on_vehicle_fired(origin: Vector3, direction: Vector3, params_id: int, vehi
 	if ballistics == null:
 		return
 	var peer_id: int = vehicle.owner_peer
+	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
+	ballistics.spawn(origin, direction, params_id, peer_id, view_delay,
+		roster.team_of(peer_id))
+	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
+		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
+
+
+func _on_vehicle_gun_fired(origin: Vector3, direction: Vector3, params_id: int,
+		vehicle: Node) -> void:
+	if ballistics == null:
+		return
+	var peer_id: int = vehicle.gunner_peer()
 	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
 	ballistics.spawn(origin, direction, params_id, peer_id, view_delay,
 		roster.team_of(peer_id))
@@ -547,6 +561,32 @@ func can_spawn_on(peer_id: int, mate_peer: int) -> bool:
 func request_squad_spawn_rpc(mate_peer: int) -> void:
 	if is_active:
 		handle_squad_spawn_request(multiplayer.get_remote_sender_id(), mate_peer)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_switch_seat_rpc() -> void:
+	if is_active:
+		handle_switch_seat_request(multiplayer.get_remote_sender_id())
+
+
+func handle_switch_seat_request(peer: int) -> void:
+	if not is_active:
+		return
+	var vehicle: Node = _possession.get(peer)
+	if vehicle == null or not is_instance_valid(vehicle) or not vehicle.is_in_group("vehicle"):
+		return
+	var from: int = vehicle.seat_of(peer)
+	var count: int = vehicle.seats.count()
+	for step in range(1, count):
+		var target := (from + step) % count
+		if vehicle.seats.is_free(target):
+			vehicle.leave_seat(peer)
+			vehicle.take_seat(peer, target)
+			_refresh_vehicle_team(vehicle)
+			print("[server] peer %d moved from seat %d to %d of %s"
+				% [peer, from, target, vehicle.name])
+			return
+	push_warning("[server] REJECTED seat switch from peer %d: no free seat" % peer)
 
 
 func handle_squad_spawn_request(peer: int, mate_peer: int) -> void:

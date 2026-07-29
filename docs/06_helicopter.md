@@ -65,6 +65,17 @@ Rotor RPM %, collective %, altitude (ray-derived AGL), speed, climb rate, "Land 
 - Landing at < 4 m/s descent on skids: no bounce-flip.
 - Mid-air F correctly refuses; landed F exits beside the skid.
 
+## Armament (M7)
+
+Two weapons, one per seat, both projectiles through `BallisticsManager` per 11.
+
+- **Pilot — rocket pods.** Fixed forward along the hull, aimed by pointing the aircraft, because the pilot has no free-look. Alternating left/right pods, `rocket_salvo` 4 at `rocket_interval` 0.35 s, then a `rocket_reload` of 3.2 s. Slow (95 m/s), gravity-affected, 5.5 m splash — it wants leading and it punishes a hover.
+- **Gunner — chin minigun.** Turreted, slewed by the gunner's own aim within ±120° yaw and −35°/+20° pitch. 12 rounds/s at 780 m/s with no splash, limited by **heat** rather than ammo: `gun_heat_per_shot` 0.035, `gun_cool_rate` 0.45/s, so about 28 rounds of continuous fire before it cuts out.
+
+Heat was chosen over an ammo count because it needs no reload UI and no resupply concept, and it self-corrects — a gunner who paces their bursts never runs dry. Ammo counts stay available if the sandbox ever grows resupply.
+
+The tank's second seat carries the same turret with the same minigun round; the code is shared verbatim between both vehicles.
+
 ## Open questions
 
 - M6: the 04 framework and the M5 replication path were reused **untouched**. `VehicleCommon` dropped in unchanged, `GameServer.register_vehicle` picked the heli up from the level's `Vehicles` node with no new code, and snapshots carry it through the existing vehicle path. Two keys ride along that `SnapshotBuffer._blend` does not know how to interpolate (`rr` rotor rpm, `co` collective); the blend copies unknown keys from the newer snapshot, so they step at 20 Hz instead of interpolating. For a spool gauge and a rotor-spin visual that is invisible, so the blend was deliberately left alone rather than extended.

@@ -149,7 +149,16 @@ func _bot_driver_command() -> InputCommand:
 
 func _is_piloting() -> bool:
 	var entity := GameClient.my_entity
-	return entity != null and is_instance_valid(entity) and entity.is_in_group("helicopter")
+	if entity == null or not is_instance_valid(entity):
+		return false
+	if not entity.is_in_group("helicopter"):
+		return false
+	return entity.seat_of(GameClient.get_peer_id()) == Seats.DRIVER
+
+
+func _in_vehicle() -> bool:
+	var entity := GameClient.my_entity
+	return entity != null and is_instance_valid(entity) and entity.is_in_group("vehicle")
 
 
 func _cyclic_vector() -> Vector2:
@@ -175,7 +184,8 @@ func _button_mask() -> int:
 	var bits := _latched_buttons
 	if Input.is_action_pressed("jump"): bits |= InputCommand.JUMP
 	if Input.is_action_pressed("sprint"): bits |= InputCommand.SPRINT
-	if Input.is_action_pressed("fire"): bits |= InputCommand.FIRE
+	if Input.is_action_pressed("fire") and not _in_vehicle(): bits |= InputCommand.FIRE
+	if _in_vehicle() and Input.is_action_pressed("vehicle_fire"): bits |= InputCommand.FIRE
 	if Input.is_action_pressed("interact"): bits |= InputCommand.INTERACT
 	if Input.is_action_pressed("exit_vehicle"): bits |= InputCommand.EXIT
 	if Input.is_action_pressed("brake"): bits |= InputCommand.BRAKE

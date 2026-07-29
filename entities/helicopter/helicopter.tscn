@@ -60,6 +60,14 @@ size = Vector3(0.06, 2.4, 0.22)
 material = SubResource("StandardMaterial3D_dark")
 size = Vector3(0.24, 0.5, 0.24)
 
+[sub_resource type="BoxMesh" id="BoxMesh_pod"]
+material = SubResource("StandardMaterial3D_dark")
+size = Vector3(0.42, 0.42, 1.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chin"]
+material = SubResource("StandardMaterial3D_dark")
+size = Vector3(0.36, 0.3, 0.9)
+
 [sub_resource type="BoxShape3D" id="BoxShape3D_entry"]
 size = Vector3(5, 3.4, 9)
 
@@ -146,6 +154,34 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 2.3, 6.1)
 
 [node name="Blade" type="MeshInstance3D" parent="TailRotor/Visual"]
 mesh = SubResource("BoxMesh_tailblade")
+
+[node name="RocketPodL" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 1.2, -1.6)
+
+[node name="RocketPodR" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.2, -1.6)
+
+[node name="GunYaw" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, -2.6)
+
+[node name="GunPitch" type="Node3D" parent="GunYaw"]
+
+[node name="Muzzle" type="Marker3D" parent="GunYaw/GunPitch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.7)
+
+[node name="Visual" type="Node3D" parent="GunYaw/GunPitch"]
+
+[node name="Barrel" type="MeshInstance3D" parent="GunYaw/GunPitch/Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.35)
+mesh = SubResource("BoxMesh_chin")
+
+[node name="PodLVisual" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 1.2, -1.2)
+mesh = SubResource("BoxMesh_pod")
+
+[node name="PodRVisual" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.2, -1.2)
+mesh = SubResource("BoxMesh_pod")
 
 [node name="CockpitCam" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.85, -3.2)

@@ -1,6 +1,10 @@
 extends RigidBody3D
 
+signal fired(origin: Vector3, direction: Vector3, params_id: int)
+signal gun_fired(origin: Vector3, direction: Vector3, params_id: int)
+
 const SEAT_COUNT := 2
+const GUNNER_SEAT := 1
 
 @export var max_lift: float = 34000.0
 @export var collective_rate: float = 1.9
@@ -12,6 +16,18 @@ const SEAT_COUNT := 2
 @export var tilt_limit_deg: float = 45.0
 @export var tilt_limit_strength: float = 4.0
 
+@export var rocket_params_id: int = 4
+@export var rocket_interval: float = 0.35
+@export var rocket_salvo: int = 4
+@export var rocket_reload: float = 3.2
+@export var gun_params_id: int = 3
+@export var gun_rate_per_second: float = 12.0
+@export var gun_slew_deg: float = 110.0
+@export var gun_yaw_limit_deg: float = 120.0
+@export var gun_pitch_min_deg: float = -35.0
+@export var gun_pitch_max_deg: float = 20.0
+@export var gun_heat_per_shot: float = 0.035
+@export var gun_cool_rate: float = 0.45
 @export var exit_max_speed: float = 2.0
 @export var exit_max_altitude: float = 3.0
 @export var ground_probe_distance: float = 250.0
@@ -49,6 +65,18 @@ var _possessed: bool = false
 var _server_authority: bool = true
 var _chase_active: bool = false
 var _history := PositionHistory.new()
+var _gun_yaw: Node3D
+var _gun_pitch: Node3D
+var _gun_muzzle: Marker3D
+var _gun_yaw_angle: float = 0.0
+var _gun_pitch_angle: float = 0.0
+var _gun_aim: Vector3 = Vector3.FORWARD
+var _gun_cooldown: float = 0.0
+var _gun_heat: float = 0.0
+var _rocket_cooldown: float = 0.0
+var _rockets_left: int = 0
+var _pods: Array[Marker3D] = []
+var _pod_index: int = 0
 
 
 func _ready() -> void:
@@ -59,6 +87,7 @@ func _ready() -> void:
 		_pending.append([])
 		_last_command.append(InputCommand.new())
 
+	_init_gunner()
 	add_to_group("controllable")
 	add_to_group("vehicle")
 	add_to_group("helicopter")
@@ -102,6 +131,96 @@ func refresh_authority() -> void:
 		physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		freeze = true
 	reset_physics_interpolation()
+
+
+func rockets_left() -> int:
+	return _rockets_left
+
+
+func reloading() -> bool:
+	return _rockets_left <= 0
+
+
+func _step_rockets(cmd: InputCommand, driving: bool, delta: float) -> void:
+	_rocket_cooldown = maxf(0.0, _rocket_cooldown - delta)
+	if _rockets_left <= 0:
+		if _rocket_cooldown <= 0.0:
+			_rockets_left = rocket_salvo
+		return
+	if not driving or not cmd.held(InputCommand.FIRE) or _rocket_cooldown > 0.0:
+		return
+	if _pods.is_empty():
+		return
+	var pod := _pods[_pod_index % _pods.size()]
+	_pod_index += 1
+	_rockets_left -= 1
+	_rocket_cooldown = rocket_interval if _rockets_left > 0 else rocket_reload
+	fired.emit(pod.global_position, -global_transform.basis.z, rocket_params_id)
+
+
+func _init_gunner() -> void:
+	_gun_yaw = get_node_or_null("GunYaw")
+	_gun_pitch = get_node_or_null("GunYaw/GunPitch")
+	_gun_muzzle = get_node_or_null("GunYaw/GunPitch/Muzzle")
+	_pods = []
+	for name in ["RocketPodL", "RocketPodR"]:
+		var pod := get_node_or_null(name) as Marker3D
+		if pod != null:
+			_pods.append(pod)
+	_rockets_left = rocket_salvo
+
+
+func gunner_peer() -> int:
+	return seats.occupant(GUNNER_SEAT)
+
+
+func gun_angles() -> Vector2:
+	return Vector2(_gun_yaw_angle, _gun_pitch_angle)
+
+
+func gun_heat() -> float:
+	return _gun_heat
+
+
+func _step_gunner(delta: float) -> void:
+	var manned := seats.occupant(GUNNER_SEAT) != 0
+	var cmd := _next_command(GUNNER_SEAT)
+	_gun_cooldown = maxf(0.0, _gun_cooldown - delta)
+	if manned and cmd.aim.length_squared() > 0.000001:
+		_gun_aim = cmd.aim
+
+	var flat := Vector3(_gun_aim.x, 0.0, _gun_aim.z)
+	if flat.length_squared() > 0.000001:
+		var hull_yaw := global_transform.basis.get_euler().y
+		var want := wrapf(atan2(-flat.x, -flat.z) - hull_yaw, -PI, PI)
+		want = clampf(want, deg_to_rad(-gun_yaw_limit_deg), deg_to_rad(gun_yaw_limit_deg))
+		var step := deg_to_rad(gun_slew_deg) * delta
+		_gun_yaw_angle = wrapf(_gun_yaw_angle
+			+ clampf(wrapf(want - _gun_yaw_angle, -PI, PI), -step, step), -PI, PI)
+
+	var want_pitch := clampf(asin(clampf(_gun_aim.normalized().y, -1.0, 1.0)),
+		deg_to_rad(gun_pitch_min_deg), deg_to_rad(gun_pitch_max_deg))
+	_gun_pitch_angle += clampf(want_pitch - _gun_pitch_angle,
+		-deg_to_rad(gun_slew_deg) * delta, deg_to_rad(gun_slew_deg) * delta)
+	_apply_gun()
+
+	if _gun_heat > 0.0:
+		_gun_heat = maxf(0.0, _gun_heat - gun_cool_rate * delta)
+	if not manned or not cmd.held(InputCommand.FIRE):
+		return
+	if _gun_cooldown > 0.0 or _gun_heat >= 1.0:
+		return
+	_gun_cooldown = 1.0 / maxf(gun_rate_per_second, 0.001)
+	_gun_heat = minf(1.0, _gun_heat + gun_heat_per_shot)
+	gun_fired.emit(_gun_muzzle.global_position,
+		-_gun_muzzle.global_transform.basis.z, gun_params_id)
+
+
+func _apply_gun() -> void:
+	if _gun_yaw != null:
+		_gun_yaw.rotation.y = _gun_yaw_angle
+	if _gun_pitch != null:
+		_gun_pitch.rotation.x = _gun_pitch_angle
 
 
 func get_display_name() -> String:
@@ -298,6 +417,8 @@ func _physics_process(delta: float) -> void:
 	engine_on = driving
 	_step_engine(delta)
 	_step_collective(cmd, driving, delta)
+	_step_rockets(cmd, driving, delta)
+	_step_gunner(delta)
 	_apply_rotor_forces(cmd, driving)
 	_history.push(float(Time.get_ticks_msec()) * 0.001, global_position,
 		-global_transform.basis.z)

@@ -8,6 +8,7 @@ const ENTRY_GROUP := "vehicle_entry"
 var _last_prompt: String = ""
 var _interact_latch: bool = false
 var _exit_latch: bool = false
+var _switch_latch: bool = false
 var _target: Node = null
 
 
@@ -19,9 +20,10 @@ func _physics_process(_delta: float) -> void:
 		return
 
 	if entity.is_in_group("vehicle"):
-		_emit("%s — F to exit" % entity.get_display_name())
+		_emit("%s — F to exit, C to switch seat" % entity.get_display_name())
 		_target = null
 		_poll_exit()
+		_poll_switch()
 		return
 
 	if not entity.has_method("get_interact_target"):
@@ -48,6 +50,16 @@ func _poll_enter() -> void:
 	if pressed and not _interact_latch and _target != null:
 		GameClient.request_enter(_target)
 	_interact_latch = pressed
+
+
+func _poll_switch() -> void:
+	if not can_poll():
+		_switch_latch = false
+		return
+	var pressed := Input.is_action_pressed("switch_seat")
+	if pressed and not _switch_latch:
+		GameClient.request_switch_seat()
+	_switch_latch = pressed
 
 
 func _poll_exit() -> void:

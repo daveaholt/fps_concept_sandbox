@@ -485,6 +485,13 @@ func squadmates_on_map() -> Array:
 	return out
 
 
+func request_switch_seat() -> void:
+	if GameServer.is_active:
+		GameServer.handle_switch_seat_request(get_peer_id())
+	elif can_rpc():
+		GameServer.request_switch_seat_rpc.rpc_id(1)
+
+
 func request_squad_spawn(mate_peer: int) -> void:
 	if mate_peer <= 0:
 		return

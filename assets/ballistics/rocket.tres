@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ProjectileParams" format=3]
+
+[ext_resource type="Script" path="res://entities/ballistics/projectile_params.gd" id="1_rkt"]
+
+[resource]
+script = ExtResource("1_rkt")
+display_name = "Rocket"
+muzzle_velocity = 95.0
+drag_k = 0.0015
+gravity_scale = 0.35
+base_damage = 70.0
+max_lifetime = 8.0
+damage_floor = 0.6
+splash_radius = 5.5
+splash_damage = 55.0
+tracer_length = 5.0
+tracer_width = 0.18
+tracer_colour = Color(1, 0.55, 0.2, 1)
