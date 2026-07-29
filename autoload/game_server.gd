@@ -222,6 +222,17 @@ func handle_start_request(peer: int) -> void:
 	_broadcast_roster()
 
 
+func _refresh_vehicle_team(vehicle: Node) -> void:
+	if vehicle == null or not is_instance_valid(vehicle):
+		return
+	var occupants: Array = vehicle.seats.occupants()
+	if occupants.is_empty():
+		vehicle.team = Roster.UNALIGNED
+		return
+	var driver: int = vehicle.seats.driver()
+	vehicle.team = roster.team_of(driver if driver != 0 else int(occupants[0]))
+
+
 func fill_with_bots() -> void:
 	pass
 
@@ -288,9 +299,9 @@ func handle_enter_request(peer: int, vehicle: Node) -> void:
 	if occupant.is_in_group("vehicle"):
 		push_warning("[server] REJECTED enter from peer %d: already in a vehicle" % peer)
 		return
-	if vehicle.is_occupied():
-		push_warning("[server] REJECTED enter from peer %d: %s is occupied by peer %d"
-			% [peer, vehicle.name, vehicle.owner_peer])
+	if not vehicle.has_free_seat():
+		push_warning("[server] REJECTED enter from peer %d: %s is full (%d seats)"
+			% [peer, vehicle.name, vehicle.seats.count()])
 		return
 
 	var distance: float = occupant.global_position.distance_to(vehicle.global_position)
@@ -300,9 +311,13 @@ func handle_enter_request(peer: int, vehicle: Node) -> void:
 		return
 
 	_release_entity(peer)
-	vehicle.owner_peer = peer
-	vehicle.team = roster.team_of(peer)
+	var seat: int = vehicle.take_seat(peer)
+	if seat < 0:
+		push_warning("[server] REJECTED enter from peer %d: no seat free" % peer)
+		return
+	_refresh_vehicle_team(vehicle)
 	_bind(peer, vehicle)
+	print("[server] peer %d took seat %d of %s" % [peer, seat, vehicle.name])
 	print("[server] peer %d entered %s" % [peer, vehicle.name])
 
 
@@ -320,9 +335,10 @@ func handle_exit_request(peer: int) -> void:
 
 	var space := (vehicle as Node3D).get_world_3d().direct_space_state
 	var exit_transform: Transform3D = vehicle.common().pick_exit_transform(space)
-	vehicle.owner_peer = 0
-	vehicle.team = Roster.UNALIGNED
-	vehicle.unpossess()
+	vehicle.leave_seat(peer)
+	_refresh_vehicle_team(vehicle)
+	if vehicle.seats.is_empty():
+		vehicle.unpossess()
 	_possession.erase(peer)
 	_inputs.erase(peer)
 
@@ -369,9 +385,10 @@ func _release_peer(peer_id: int) -> void:
 	var entity: Node = _possession.get(peer_id)
 	if entity != null and is_instance_valid(entity):
 		if entity.is_in_group("vehicle"):
-			entity.owner_peer = 0
-			entity.team = Roster.UNALIGNED
-			entity.unpossess()
+			entity.leave_seat(peer_id)
+			_refresh_vehicle_team(entity)
+			if entity.seats.is_empty():
+				entity.unpossess()
 		else:
 			if ballistics != null:
 				ballistics.unregister_target(entity)
@@ -513,7 +530,7 @@ func can_spawn_on(peer_id: int, mate_peer: int) -> bool:
 	if entity == null or not is_instance_valid(entity):
 		return false
 	if entity.is_in_group("vehicle"):
-		return false
+		return entity.has_free_seat()
 	return true
 
 
@@ -534,6 +551,16 @@ func handle_squad_spawn_request(peer: int, mate_peer: int) -> void:
 			% [peer, mate_peer])
 		return
 	var mate: Node3D = _possession.get(mate_peer)
+	if mate.is_in_group("vehicle"):
+		var seat: int = mate.take_seat(peer)
+		if seat < 0:
+			push_warning("[server] REJECTED squad spawn from peer %d: no seat free" % peer)
+			return
+		_refresh_vehicle_team(mate)
+		_bind(peer, mate)
+		print("[server] peer %d spawned into seat %d of %s alongside peer %d"
+			% [peer, seat, mate.name, mate_peer])
+		return
 	var origin := disperse(mate.global_position)
 	var entity := _spawn_infantry(peer, origin, -mate.global_transform.basis.z)
 	if entity != null:
@@ -634,7 +661,10 @@ func _feed_commands() -> void:
 			_last_command[peer_id] = cmd
 
 		if cmd != null:
-			entity.push_command(cmd)
+			if entity.has_method("seat_of"):
+				entity.push_command(cmd, entity.seat_of(peer_id))
+			else:
+				entity.push_command(cmd)
 
 
 func _broadcast_snapshot() -> void:

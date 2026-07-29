@@ -1,5 +1,7 @@
 extends VehicleBody3D
 
+const SEAT_COUNT := 2
+
 signal fired(origin: Vector3, direction: Vector3, params_id: int)
 
 @export var max_engine_force: float = 14000.0
@@ -48,8 +50,9 @@ var _muzzle: Marker3D
 var _left_wheels: Array[VehicleWheel3D] = []
 var _right_wheels: Array[VehicleWheel3D] = []
 
-var _pending: Array[InputCommand] = []
-var _last_command: InputCommand = InputCommand.new()
+var seats := Seats.new(SEAT_COUNT)
+var _pending: Array = []
+var _last_command: Array = []
 var _aim: Vector3 = Vector3.FORWARD
 var _turret_yaw_angle: float = 0.0
 var _cannon_pitch_angle: float = 0.0
@@ -65,6 +68,12 @@ var _history := PositionHistory.new()
 
 func _ready() -> void:
 	_server_authority = multiplayer.multiplayer_peer == null or multiplayer.is_server()
+	_pending = []
+	_last_command = []
+	for _i in seats.count():
+		_pending.append([])
+		_last_command.append(InputCommand.new())
+
 	add_to_group("controllable")
 	add_to_group("vehicle")
 	add_to_group("tank")
@@ -116,7 +125,8 @@ func unpossess() -> void:
 	_predict_turret = false
 	if _camera != null:
 		_camera.current = false
-	_last_command = InputCommand.new()
+	for i in _last_command.size():
+		_last_command[i] = InputCommand.new()
 
 
 func is_possessed() -> bool:
@@ -124,7 +134,7 @@ func is_possessed() -> bool:
 
 
 func is_occupied() -> bool:
-	return owner_peer != 0
+	return not seats.is_empty()
 
 
 func can_exit() -> bool:
@@ -135,8 +145,31 @@ func common() -> VehicleCommon:
 	return _common
 
 
-func push_command(cmd: InputCommand) -> void:
-	_pending.append(cmd)
+func push_command(cmd: InputCommand, seat: int = Seats.DRIVER) -> void:
+	if seat < 0 or seat >= _pending.size():
+		return
+	_pending[seat].append(cmd)
+
+
+func seat_of(peer_id: int) -> int:
+	return seats.seat_of(peer_id)
+
+
+func has_free_seat() -> bool:
+	return seats.first_free() >= 0
+
+
+func take_seat(peer_id: int, seat: int = -1) -> int:
+	var index := seat if seat >= 0 else seats.first_free()
+	if index < 0 or not seats.take(peer_id, index):
+		return -1
+	owner_peer = seats.driver()
+	return index
+
+
+func leave_seat(peer_id: int) -> void:
+	seats.release(peer_id)
+	owner_peer = seats.driver()
 
 
 func speed_kmh() -> float:
@@ -205,7 +238,7 @@ func resolve_sector(world_point: Vector3) -> Dictionary:
 
 
 func team_id() -> int:
-	return Roster.UNALIGNED if owner_peer == 0 else team
+	return Roster.UNALIGNED if seats.is_empty() else team
 
 
 func apply_damage(amount: float) -> void:
@@ -214,10 +247,13 @@ func apply_damage(amount: float) -> void:
 	health = maxf(0.0, health - amount)
 
 
-func _next_command() -> InputCommand:
-	if not _pending.is_empty():
-		_last_command = _pending.pop_front()
-	return _last_command
+func _next_command(seat: int = Seats.DRIVER) -> InputCommand:
+	if seat < 0 or seat >= _pending.size():
+		return InputCommand.new()
+	var queue: Array = _pending[seat]
+	if not queue.is_empty():
+		_last_command[seat] = queue.pop_front()
+	return _last_command[seat]
 
 
 func _physics_process(delta: float) -> void:

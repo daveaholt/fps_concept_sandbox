@@ -18,7 +18,7 @@ VehicleCommon (Node)
 
 1. Player's interact ray (or overlap fallback) hits `EntryZone` → prompt.
 2. `interact` → `GameClient.request_enter(vehicle)` → RPC → server validation.
-3. Vehicle validates (not already occupied — future-proofing for multi-seat, single seat in v1).
+3. Vehicle validates (**a seat is free** — multi-seat as of M7; see below).
 4. Server grants — despawn infantry, bind peer to vehicle; on the owning client:
    - `player.unpossess()` → infantry body **despawned** (its transform is irrelevant afterward; exit position comes from the vehicle).
    - `vehicle.possess()` → vehicle camera goes current, vehicle input live, engine state per vehicle spec.
@@ -52,6 +52,21 @@ On `possession_changed`, HUD asks the new controllable for `get_display_name()` 
 - Exiting against a wall uses the alternate/topside exit; player is never spawned inside collision.
 - Despawned infantry: no stray capsule left in the world, no orphaned camera claiming `current`.
 - Possession spam (E/F mashing) cannot double-possess or leave `possessed == null` while alive.
+
+## Seats (M7)
+
+`single seat in v1` is over. Vehicles carry a `Seats` helper (`systems/possession/seats.gd`) holding one peer per seat, and **seat 0 is always the driver/pilot**. That choice is deliberate: `owner_peer` keeps its old meaning as "who is driving", so the twenty-odd places that read it stayed correct rather than being rewritten to ask about seats.
+
+- Entering takes the **first free seat**, driver first. A full vehicle is refused; a partly full one is not.
+- Exiting frees only that peer's seat. **A pilot leaving does not evict the gunner**, and the vehicle stays occupied.
+- Commands queue **per seat**. Two occupants map to the same entity, so a single command stream would have the pilot and gunner fighting over one queue. `push_command(cmd, seat)` keeps them apart, and infantry keeps the one-argument form.
+- The vehicle's team follows the **driver**, falling back to any remaining occupant when the driver leaves.
+
+Current fits: helicopter 2 (pilot, gunner), tank 2 (driver, machine gunner).
+
+### Open questions
+
+- M7: `team_id()` first read `owner_peer == 0` to mean "empty". With seats that is wrong — a gunner alone in a helicopter has no driver, so the vehicle reported **unaligned** and its own team could shoot it. It now asks `seats.is_empty()`. Anything else phrased as "is someone driving" should be re-read as "is anyone aboard".
 
 ## Open questions
 

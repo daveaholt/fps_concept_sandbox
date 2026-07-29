@@ -451,7 +451,7 @@ func squadmate_spawn_targets() -> Array:
 		return out
 	for mate in roster.squadmates(get_peer_id()):
 		var body := squadmate_entity(mate)
-		if body != null and is_instance_valid(body) and not body.is_in_group("vehicle"):
+		if body != null and is_instance_valid(body):
 			out.append(mate)
 	return out
 
