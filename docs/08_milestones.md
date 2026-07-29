@@ -54,7 +54,18 @@ Implement the embedded-key auth handshake per 10 (nonce challenge, HMAC reply, 2
 
 ## M7 — Sandbox polish pass (open-ended)
 
-Backlog, any order: passenger seats · **helicopter armament — chin minigun + rocket pods, gunner-operated, so it lands with passenger seats** · vehicle icons + *squad/team* players on deploy map (never all players — see 07) · exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · tank cockpit cam · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
+Backlog, any order: passenger seats · **helicopter armament — chin minigun + rocket pods, gunner-operated, so it lands with passenger seats** · vehicle icons + *squad/team* players on deploy map (never all players — see 07) · exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · tank cockpit cam (**= the "first person tank" ask**) · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
+
+### Added after M6
+
+Requested by the repo owner. Listed separately from the line above because each one has a dependency or a spec consequence worth knowing before it is picked up.
+
+- **Infantry squat / crouch.** Not specced anywhere today — 03 has no stance concept. The catch is that it lands inside `InfantrySim.simulate`, the pure step function the server and the predicting client both run, so it has to be deterministic and replay-safe or reconciliation breaks. It also changes the capsule height, which moves the hit-zone geometry in 11 and everything the lag-compensation history replays against. Cheap to *feel*, not cheap to get right.
+- **ADS / zoom for all weapons.** No action is bound for it at all yet. Touches 02 (a binding on every device — LB was earmarked in the M6 heli scheme), 03 (infantry weapon handling), and both vehicles. Decide early whether zoom is a pure camera FOV change or also alters spread/recoil, because the second makes it part of the sim rather than the view.
+- **Vehicle damage states.** Tank and heli already carry a plain `health` float and nothing reads it but death. This is the staged version — visual and functional degradation as it drops. Pairs naturally with *vehicle respawn on wreck*, already on the list above.
+- **Vehicle impact damage.** Collision and hard-landing damage. Interacts with 06's landing criterion (< 4 m/s on skids, no bounce-flip) — that number becomes the boundary between a landing and a crash — and with ramming in 05.
+- **Minimap.** **Inherits 07's squad/team rule verbatim.** 07 already warns that the moment players become legible on *any* map view, it turns the wallhack that 10 lists as an accepted gap into a deliberate feature. There is still no team or squad concept in the sandbox, so a minimap either ships with no player markers at all, or waits for teams. Do not ship an all-players version intending to filter it later.
+- **Flares / countermeasures.** Presupposes a guided threat, and nothing in the sandbox locks on to anything — every weapon is an unguided projectile per 11. Either a lock-on AA weapon comes first and flares defeat it, or flares are decoration. Worth deciding which before building either.
 
 ## Working agreements
 
