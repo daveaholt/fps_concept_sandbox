@@ -14,7 +14,7 @@ Clients never tell the server *where they are* or *what they hit* — only *what
 - **Dedicated:** the same project exported headless (`--headless`, dedicated-server export template strips visuals). Launch: `godot --headless -- --server --port 27015`.
 - **Host mode:** `--server` + a local client in-process. Identical server code path; the local "connection" just has ~0 RTT. This keeps dev iteration at F5-speed without forking any logic.
 - **Client:** main menu → enter IP → connect. No lobby/matchmaking/NAT punchthrough in scope; friends use IP or a VPN-LAN (Tailscale-style). Port-forwarding is a README problem, not a code problem.
-- ~~2–8 players~~ **2–16 players (8 v 8), squads of up to 5** design range — raised after M6. No interest management (everyone gets everything), listed honestly in the anti-cheat gaps below. That was comfortable at 8; at 16 it needs measuring rather than assuming — see the open questions.
+- ~~2–8 players~~ **2–16 players (8 v 8), squads of 4** design range — raised after M6. No interest management (everyone gets everything), listed honestly in the anti-cheat gaps below. That was comfortable at 8; at 16 it needs measuring rather than assuming — see the open questions.
 
 ## Time model
 
@@ -126,5 +126,5 @@ Host mode + `--client --connect 127.0.0.1` second instance, launched via an edit
   1. `NetCli.MAX_PEERS` is **8** and simply has to go up. The least interesting part.
   2. **Interest management.** Server egress scales as clients × entities, so 8 → 16 players is roughly **4×** total, before vehicles and projectiles. That is a real jump but not obviously fatal, unlike the 30-player version of this idea that was briefly considered. Keep the "experiment" framing on the M7 backlog and *measure at 16 before committing to it* — with the note that if it does get built, it also closes the wallhack gap listed above, so bandwidth and anti-cheat point the same way.
   3. **Snapshot encoding.** This doc's advice is to keep dictionaries → `var_to_bytes` and switch to packed arrays "only if bandwidth actually hurts at 8 players". The threshold moves to 16; the instruction to measure first still stands and is still right.
-- Post-M6: squads of up to 5 across 8 players a side means **two squads per team** (5 + 3), not a neat division. Whatever squad assignment gets built should not assume squads are full or equal.
+- Post-M6: squads of **4** divide evenly into 8 a side — **two full squads per team**, no remainder. Chosen over 5 for exactly that reason. Squad assignment can assume a fixed squad size, which makes both the deploy-map filter and any squad UI simpler than the uneven alternative would have been.
 - Post-M6: 12's hosting cost estimate is built on "20 Hz snapshots × 8 players". Egress is the term that scales worst, so it wants redoing at 16 before MH is scoped — though at 4× of "a few GB, pennies" it is unlikely to change the decision.
