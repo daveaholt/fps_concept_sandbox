@@ -130,7 +130,7 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 | M3 | Prediction, reconciliation, ballistics | **Done** (`m3`) |
 | M4 | Deploy map + death loop | **Done** (`m4`) |
 | M5 | Vehicle framework + tank | **Done** (`m5`) |
-| M6 | Helicopter | Next |
+| M6 | Helicopter | **In progress** — flies, tuned; networked flight verdict outstanding |
 | MH | Hosted friend test (auth handshake + Azure server) | |
 | M7 | Sandbox polish pass | |
 

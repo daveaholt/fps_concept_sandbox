@@ -51,4 +51,4 @@ Use the `_console` build when you need stdout; the plain `.exe` swallows it.
 
 ## Status
 
-Current milestone status is the table in `README.md`. **M5 is closed** (tag `m5`); **M6** (helicopter) is next.
+Current milestone status is the table in `README.md`. **M5 is closed** (tag `m5`). **M6** is in progress and **not yet tagged**: the helicopter flies and every 06 acceptance criterion passes headlessly, but 08's gate also requires the 100 ms interpolated-flight verdict written down either way, and that has not been flown. Do not tag `m6` or start M7/MH until it is.
