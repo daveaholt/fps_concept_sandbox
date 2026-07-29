@@ -7,6 +7,8 @@ extends RigidBody3D
 @export var pedal_torque: float = 13000.0
 @export var attitude_damping: float = 3.0
 @export var auto_level: float = 0.35
+@export var tilt_limit_deg: float = 45.0
+@export var tilt_limit_strength: float = 4.0
 
 @export var exit_max_speed: float = 2.0
 @export var exit_max_altitude: float = 3.0
@@ -270,6 +272,23 @@ func _apply_rotor_forces(cmd: InputCommand, driving: bool) -> void:
 
 	if cyclic.length() < 0.05 and auto_level > 0.0:
 		_apply_auto_level(frame, authority)
+	_apply_tilt_limit(frame, authority)
+
+
+func tilt_from_level() -> float:
+	return global_transform.basis.y.angle_to(Vector3.UP)
+
+
+func _apply_tilt_limit(frame: Basis, authority: float) -> void:
+	var limit := deg_to_rad(tilt_limit_deg)
+	var tilt := frame.y.angle_to(Vector3.UP)
+	if tilt <= limit:
+		return
+	var axis := frame.y.cross(Vector3.UP)
+	if axis.length_squared() < 0.000001:
+		axis = frame.x
+	var excess := tilt - limit
+	apply_torque(axis.normalized() * excess * tilt_limit_strength * cyclic_torque * authority)
 
 
 func _apply_auto_level(frame: Basis, authority: float) -> void:
