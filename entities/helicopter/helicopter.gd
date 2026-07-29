@@ -1,14 +1,12 @@
 extends RigidBody3D
 
-@export var max_lift: float = 33500.0
-@export var collective_rate: float = 1.8
+@export var max_lift: float = 29100.0
+@export var collective_rate: float = 0.8
 @export var spool_rate: float = 0.25
-@export var cyclic_torque: float = 24000.0
-@export var pedal_torque: float = 14000.0
+@export var cyclic_torque: float = 14000.0
+@export var pedal_torque: float = 9000.0
 @export var attitude_damping: float = 3.0
-@export var auto_level: float = 0.85
-@export var max_tilt_deg: float = 38.0
-@export var attitude_gain: float = 5.0
+@export var auto_level: float = 0.35
 
 @export var exit_max_speed: float = 2.0
 @export var exit_max_altitude: float = 3.0
@@ -261,41 +259,26 @@ func _apply_rotor_forces(cmd: InputCommand, driving: bool) -> void:
 	apply_central_force(frame.y * collective * max_lift * authority)
 
 	var cyclic := cmd.move if driving else Vector2.ZERO
-	if auto_level > 0.0:
-		_apply_attitude_command(frame, cyclic, authority)
-	else:
-		if absf(cyclic.y) > 0.001:
-			apply_torque(frame.x * -cyclic.y * cyclic_torque * authority)
-		if absf(cyclic.x) > 0.001:
-			apply_torque(frame.z * -cyclic.x * cyclic_torque * authority)
+	if absf(cyclic.y) > 0.001:
+		apply_torque(frame.x * -cyclic.y * cyclic_torque * authority)
+	if absf(cyclic.x) > 0.001:
+		apply_torque(frame.z * -cyclic.x * cyclic_torque * authority)
 
 	var pedals := cmd.axes.x if driving else 0.0
 	if absf(pedals) > 0.001:
 		apply_torque(frame.y * -pedals * pedal_torque * authority)
 
+	if cyclic.length() < 0.05 and auto_level > 0.0:
+		_apply_auto_level(frame, authority)
 
 
-func nose_up_angle() -> float:
-	return asin(clampf(-global_transform.basis.z.y, -1.0, 1.0))
-
-
-func roll_right_angle() -> float:
-	return asin(clampf(-global_transform.basis.x.y, -1.0, 1.0))
-
-
-func _apply_attitude_command(frame: Basis, cyclic: Vector2, authority: float) -> void:
-	var limit := deg_to_rad(max_tilt_deg)
-	var want_pitch := -cyclic.y * limit
-	var want_roll := cyclic.x * limit
-
-	var pitch_error := want_pitch - asin(clampf(-frame.z.y, -1.0, 1.0))
-	var roll_error := want_roll - asin(clampf(-frame.x.y, -1.0, 1.0))
-
-	var pitch_cmd := clampf(pitch_error * attitude_gain, -1.0, 1.0) * auto_level
-	var roll_cmd := clampf(roll_error * attitude_gain, -1.0, 1.0) * auto_level
-
-	apply_torque(frame.x * pitch_cmd * cyclic_torque * authority)
-	apply_torque(frame.z * -roll_cmd * cyclic_torque * authority)
+func _apply_auto_level(frame: Basis, authority: float) -> void:
+	var up := frame.y
+	var axis := up.cross(Vector3.UP)
+	if axis.length_squared() < 0.000001:
+		return
+	var angle := up.angle_to(Vector3.UP)
+	apply_torque(axis.normalized() * angle * auto_level * cyclic_torque * authority)
 
 
 func _process(delta: float) -> void:
