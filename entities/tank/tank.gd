@@ -109,6 +109,20 @@ func _ready() -> void:
 	reset_physics_interpolation()
 
 
+func refresh_authority() -> void:
+	var was := _server_authority
+	_server_authority = multiplayer.multiplayer_peer == null or multiplayer.is_server()
+	if was == _server_authority:
+		return
+	if _server_authority:
+		physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON
+		freeze = false
+	else:
+		physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+		freeze = true
+	reset_physics_interpolation()
+
+
 func get_display_name() -> String:
 	return "Tank"
 

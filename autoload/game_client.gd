@@ -111,6 +111,7 @@ func _connect_to(address: String, port: int) -> void:
 	_address = address
 	_port = port
 	_set_state(State.CONNECTING)
+	GameServer.refresh_entity_authority()
 	print("[client] connecting to %s:%d ..." % [address, port])
 
 
@@ -414,6 +415,7 @@ func _set_state(next: State) -> void:
 func _on_connected() -> void:
 	print("[client] connected to %s:%d as peer %d" % [_address, _port, multiplayer.get_unique_id()])
 	_set_state(State.CONNECTED)
+	GameServer.refresh_entity_authority()
 	if _players_root != null and can_rpc():
 		GameServer.client_ready.rpc_id(1, NetCli.has_explicit_mode())
 

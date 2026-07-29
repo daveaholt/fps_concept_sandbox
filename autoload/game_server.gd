@@ -76,6 +76,7 @@ func _start(port: int, mode: NetCli.Mode) -> void:
 	is_active = true
 	if ballistics != null:
 		ballistics.authoritative = true
+	refresh_entity_authority()
 	_port = port
 	print("[server] listening on udp/%d as peer %d (%s mode, max %d peers)"
 		% [port, multiplayer.get_unique_id(), NetCli.mode_name(mode), NetCli.MAX_PEERS])
@@ -232,6 +233,12 @@ func _refresh_vehicle_team(vehicle: Node) -> void:
 		return
 	var driver: int = vehicle.seats.driver()
 	vehicle.team = roster.team_of(driver if driver != 0 else int(occupants[0]))
+
+
+func refresh_entity_authority() -> void:
+	for node in get_tree().get_nodes_in_group("controllable"):
+		if node.has_method("refresh_authority"):
+			node.refresh_authority()
 
 
 func fill_with_bots() -> void:
