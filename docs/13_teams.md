@@ -18,10 +18,20 @@ A slot is identified by `(squad, index)` or equivalently by a flat `0..15`. Slot
 ## Match phases
 
 ```
-LOBBY  ──Start──▶  PLAYING
+LOBBY  ──Start──▶  PLAYING  ──a team runs out of tickets──▶  RESULT  ──▶  LOBBY
 ```
 
-Two phases, no end condition. This is a sandbox; matches do not conclude, and nothing scores. A round/win system is deliberately out of scope and is not on the M7 backlog either — add it only if the sandbox ever needs to answer "who won", which it currently does not.
+An earlier draft had two phases and no end condition, on the grounds that a sandbox has nothing to win. Teams changed that — once there are sides, "who won" becomes a question the game can answer, so matches now end.
+
+**Tickets.** Each team starts with `START_TICKETS` respawns. Every death costs the dying player's team one. The first team to reach zero loses; the other wins. This is the Battlefield model and it is chosen because it makes every death cost something and gives the deploy screen weight, without needing objectives the sandbox does not have.
+
+- Only **infantry deaths** spend tickets today. Vehicles carry health but have no destruction path yet — *vehicle respawn on wreck* is still an open M7 backlog item — so a destroyed tank costs nothing until that lands. Worth revisiting together.
+- A death by an **unaligned** player (holding no slot, which should not happen once the lobby is enforced) spends nothing rather than crashing or guessing a side.
+- `START_TICKETS` is a tuning number, not a design one. It is deliberately low for a sandbox where two people are testing; a real 8 v 8 wants considerably more.
+
+**RESULT** is a brief announcement of the winner, then everyone returns to the lobby. **Slots are kept**, so a rematch is one press of Start. Tickets reset and every live body is despawned on the way back.
+
+The deploy map is gated to PLAYING, so nobody can deploy into a finished match or out of the lobby.
 
 ## Slot assignment is a request, not a claim
 
@@ -147,3 +157,6 @@ The main menu is Host, Join (with address entry) and Quit. The lobby is the slot
 - The deploy map is gated on `phase == PLAYING`, and opens automatically on the transition out of LOBBY for anyone not already alive.
 - The lobby doubles as the mid-match slot picker: it is visible whenever the phase is LOBBY **or** the local player holds no slot. The Start button hides once the match is running, since there is nothing left to start.
 - The HUD carries a team and squad readout in the squad's colour, top-left, driven off `roster_changed`.
+- **Tickets and the RESULT phase are built.** `START_TICKETS` is **25**, deliberately small so a match can be run to its end while testing with two people; a real 8 v 8 wants considerably more. `RESULT_SECONDS` is 8.
+- Closing the deploy map on match end needed a **forced** close. `set_deploy_map(false)` refuses while the player is dead — correct, so nobody can dismiss the spawn screen and stand around as a corpse — but that guard also blocked the match-end close, leaving the deploy screen sitting over the result. `close_deploy_map()` bypasses the aliveness check and is used only for the phase transition.
+- Tickets floor at zero rather than going negative, and `_spend_ticket` is inert outside PLAYING, so deaths landing in the same frame as the final one cannot drive the count below zero or re-trigger the end.

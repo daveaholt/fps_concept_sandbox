@@ -9,6 +9,8 @@ var _entity: Node = null
 @onready var _prompt_label: Label = $PromptLabel
 
 var _squad_label: Label
+var _ticket_label: Label
+var _result_label: Label
 
 
 func _ready() -> void:
@@ -17,6 +19,21 @@ func _ready() -> void:
 	_squad_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_squad_label.position = Vector2(18.0, 14.0)
 	add_child(_squad_label)
+	_ticket_label = Label.new()
+	_ticket_label.name = "TicketLabel"
+	_ticket_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_ticket_label.position = Vector2(18.0, 36.0)
+	add_child(_ticket_label)
+
+	_result_label = Label.new()
+	_result_label.name = "ResultLabel"
+	_result_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_result_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_result_label.position = Vector2(0.0, 120.0)
+	_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_result_label.visible = false
+	add_child(_result_label)
+
 	EventBus.roster_changed.connect(_refresh_squad)
 	_refresh_squad()
 	EventBus.possession_changed.connect(_on_possession_changed)
@@ -30,11 +47,29 @@ func _refresh_squad() -> void:
 	if slot < 0:
 		_squad_label.text = "no squad"
 		_squad_label.add_theme_color_override("font_color", Color(0.6, 0.62, 0.66))
+		_refresh_tickets()
 		return
 	var squad := Roster.squad_of_slot(slot)
 	_squad_label.text = "TEAM %d  ·  %s SQUAD" % [Roster.team_of_slot(slot),
 		Roster.squad_name(squad).to_upper()]
 	_squad_label.add_theme_color_override("font_color", Roster.squad_colour(squad))
+	_refresh_tickets()
+
+
+func _refresh_tickets() -> void:
+	var one: int = int(GameClient.tickets.get(1, 0))
+	var two: int = int(GameClient.tickets.get(2, 0))
+	_ticket_label.text = "TICKETS   team 1: %d    team 2: %d" % [one, two]
+
+	var over := GameClient.phase == GameServer.Phase.RESULT
+	_result_label.visible = over
+	if over:
+		var winner := GameClient.winning_team
+		var mine := GameClient.my_team
+		var verdict := "TEAM %d WINS" % winner
+		if mine != Roster.UNALIGNED:
+			verdict += "  —  you " + ("won" if mine == winner else "lost")
+		_result_label.text = verdict
 
 
 func _on_possession_changed(entity: Node) -> void:
@@ -52,6 +87,10 @@ func _on_prompt(text: String) -> void:
 
 
 func _process(_delta: float) -> void:
+	if GameClient.phase == GameServer.Phase.RESULT:
+		visible = true
+		_refresh_tickets()
+		return
 	if _entity == null or not is_instance_valid(_entity):
 		visible = false
 		return

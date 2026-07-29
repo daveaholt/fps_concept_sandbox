@@ -117,6 +117,8 @@ func _connect_to(address: String, port: int) -> void:
 var roster := Roster.new()
 var phase: int = 0
 var my_team: int = Roster.UNALIGNED
+var tickets: Dictionary = {}
+var winning_team: int = 0
 
 
 func is_predicting() -> bool:
@@ -226,11 +228,14 @@ func spawn_tracer(origin: Vector3, direction: Vector3, params_id: int, shooter_p
 
 
 @rpc("authority", "call_remote", "reliable")
-func receive_roster(slots: Array, new_phase: int) -> void:
-	apply_roster(slots, new_phase)
+func receive_roster(slots: Array, new_phase: int, new_tickets: Dictionary,
+		winner: int) -> void:
+	apply_roster(slots, new_phase, new_tickets, winner)
 
 
-func apply_roster(slots: Array, new_phase: int) -> void:
+func apply_roster(slots: Array, new_phase: int, new_tickets := {}, winner := 0) -> void:
+	tickets = new_tickets
+	winning_team = winner
 	roster.from_array(slots)
 	var was := phase
 	phase = new_phase
@@ -238,6 +243,8 @@ func apply_roster(slots: Array, new_phase: int) -> void:
 	EventBus.roster_changed.emit()
 	if phase == GameServer.Phase.PLAYING and was != phase and not is_alive():
 		set_deploy_map(true)
+	elif phase != GameServer.Phase.PLAYING and deploy_map_open:
+		close_deploy_map()
 
 
 func request_slot(slot: int) -> void:
@@ -450,6 +457,15 @@ func on_killed() -> void:
 	was_killed = true
 	set_my_entity(null)
 	set_deploy_map(true)
+
+
+func close_deploy_map() -> void:
+	if not deploy_map_open:
+		return
+	deploy_map_open = false
+	if sampler != null:
+		sampler.release_mouse()
+	EventBus.deploy_map_toggled.emit(false)
 
 
 func set_deploy_map(open: bool) -> void:

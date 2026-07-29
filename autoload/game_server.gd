@@ -6,7 +6,10 @@ const MAX_BUFFERED_COMMANDS := 16
 const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
 
-enum Phase { LOBBY, PLAYING }
+enum Phase { LOBBY, PLAYING, RESULT }
+
+const START_TICKETS := 25
+const RESULT_SECONDS := 8.0
 
 signal server_started(port: int)
 signal peer_joined(peer_id: int)
@@ -19,6 +22,8 @@ var is_active: bool = false
 var tick: int = 0
 var phase: Phase = Phase.LOBBY
 var roster := Roster.new()
+var tickets := {1: START_TICKETS, 2: START_TICKETS}
+var winning_team: int = 0
 
 var _port: int = 0
 var _possession: Dictionary = {}
@@ -203,6 +208,8 @@ func handle_start_request(peer: int) -> void:
 		push_warning("[server] REJECTED start from peer %d: holds no slot" % peer)
 		return
 	fill_with_bots()
+	tickets = {1: START_TICKETS, 2: START_TICKETS}
+	winning_team = 0
 	phase = Phase.PLAYING
 	print("[server] match started by peer %d with %d players"
 		% [peer, roster.occupied_count()])
@@ -214,15 +221,52 @@ func fill_with_bots() -> void:
 	pass
 
 
+func _spend_ticket(team: int) -> void:
+	if phase != Phase.PLAYING or not tickets.has(team):
+		return
+	tickets[team] = maxi(int(tickets[team]) - 1, 0)
+	print("[server] team %d down to %d tickets" % [team, tickets[team]])
+	if int(tickets[team]) <= 0:
+		_end_match(2 if team == 1 else 1)
+	else:
+		_broadcast_roster()
+
+
+func _end_match(winner: int) -> void:
+	winning_team = winner
+	phase = Phase.RESULT
+	print("[server] match over — team %d wins (%d v %d tickets)"
+		% [winner, tickets.get(1, 0), tickets.get(2, 0)])
+	phase_changed.emit(phase)
+	_broadcast_roster()
+	await get_tree().create_timer(RESULT_SECONDS).timeout
+	_return_to_lobby()
+
+
+func _return_to_lobby() -> void:
+	if phase != Phase.RESULT:
+		return
+	for peer_id in _possession.keys():
+		_release_peer(peer_id)
+		possession_granted.emit(peer_id, null)
+	tickets = {1: START_TICKETS, 2: START_TICKETS}
+	winning_team = 0
+	phase = Phase.LOBBY
+	print("[server] back to the lobby with slots kept (%d players)"
+		% roster.occupied_count())
+	phase_changed.emit(phase)
+	_broadcast_roster()
+
+
 func team_of_peer(peer_id: int) -> int:
 	return roster.team_of(peer_id)
 
 
 func _broadcast_roster() -> void:
 	roster_changed.emit()
-	GameClient.apply_roster(roster.to_array(), int(phase))
+	GameClient.apply_roster(roster.to_array(), int(phase), tickets, winning_team)
 	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
-		GameClient.receive_roster.rpc(roster.to_array(), int(phase))
+		GameClient.receive_roster.rpc(roster.to_array(), int(phase), tickets, winning_team)
 
 
 func handle_enter_request(peer: int, vehicle: Node) -> void:
@@ -543,6 +587,7 @@ func entity_died(entity: Node) -> void:
 		return
 	var peer_id: int = entity.owner_peer
 	print("[server] %s died (peer %d) — awaiting redeploy" % [entity.name, peer_id])
+	_spend_ticket(roster.team_of(peer_id))
 	_release_peer(peer_id)
 	possession_granted.emit(peer_id, null)
 	if peer_id == 1:
