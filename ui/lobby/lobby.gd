@@ -96,7 +96,8 @@ func _on_start() -> void:
 
 
 func _process(_delta: float) -> void:
-	var want := GameClient.is_active and GameClient.phase == GameServer.Phase.LOBBY
+	var want := GameClient.is_active and (GameClient.phase == GameServer.Phase.LOBBY
+		or GameClient.my_slot() < 0)
 	if visible != want:
 		visible = want
 		if want and GameClient.sampler != null:
@@ -122,10 +123,13 @@ func _refresh() -> void:
 			Roster.squad_colour(squad) if occupant != 0 else Color(0.55, 0.58, 0.62))
 
 	var filled := GameClient.roster.occupied_count()
-	if mine < 0:
+	if mine < 0 and GameClient.phase == GameServer.Phase.PLAYING:
+		_status.text = "match in progress — pick a slot to drop in"
+	elif mine < 0:
 		_status.text = "%d in the lobby — pick a slot to join" % filled
 	else:
 		_status.text = "%s squad, team %d — %d in the lobby, empty slots stay empty" % [
 			Roster.squad_name(Roster.squad_of_slot(mine)),
 			Roster.team_of_slot(mine), filled]
 	_start_button.disabled = mine < 0
+	_start_button.visible = GameClient.phase == GameServer.Phase.LOBBY

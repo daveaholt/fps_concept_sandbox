@@ -86,10 +86,11 @@ func register_level(players_root: Node, ballistics_manager: BallisticsManager = 
 	ballistics = ballistics_manager
 	if not is_active:
 		return
+	var auto_slot := NetCli.has_explicit_mode()
 	if GameServer.is_active:
-		GameServer.client_ready_local(get_peer_id())
+		GameServer.client_ready_local(get_peer_id(), auto_slot)
 	elif can_rpc():
-		GameServer.client_ready.rpc_id(1)
+		GameServer.client_ready.rpc_id(1, auto_slot)
 	set_deploy_map(true)
 
 
@@ -407,7 +408,7 @@ func _on_connected() -> void:
 	print("[client] connected to %s:%d as peer %d" % [_address, _port, multiplayer.get_unique_id()])
 	_set_state(State.CONNECTED)
 	if _players_root != null and can_rpc():
-		GameServer.client_ready.rpc_id(1)
+		GameServer.client_ready.rpc_id(1, NetCli.has_explicit_mode())
 
 
 func _on_connection_failed() -> void:

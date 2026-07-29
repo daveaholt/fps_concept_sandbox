@@ -335,13 +335,13 @@ func _release_peer(peer_id: int) -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func client_ready() -> void:
+func client_ready(auto_slot: bool = true) -> void:
 	if is_active:
-		client_ready_local(multiplayer.get_remote_sender_id())
+		client_ready_local(multiplayer.get_remote_sender_id(), auto_slot)
 
 
-func client_ready_local(peer_id: int) -> void:
-	if phase == Phase.PLAYING and not roster.has_peer(peer_id):
+func client_ready_local(peer_id: int, auto_slot: bool = true) -> void:
+	if auto_slot and phase == Phase.PLAYING and not roster.has_peer(peer_id):
 		var free := roster.first_free_slot()
 		if free >= 0:
 			roster.assign(peer_id, free)

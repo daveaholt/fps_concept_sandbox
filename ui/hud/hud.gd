@@ -8,12 +8,33 @@ var _entity: Node = null
 @onready var _draw_bar: ProgressBar = $Bottom/DrawBar
 @onready var _prompt_label: Label = $PromptLabel
 
+var _squad_label: Label
+
 
 func _ready() -> void:
+	_squad_label = Label.new()
+	_squad_label.name = "SquadLabel"
+	_squad_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_squad_label.position = Vector2(18.0, 14.0)
+	add_child(_squad_label)
+	EventBus.roster_changed.connect(_refresh_squad)
+	_refresh_squad()
 	EventBus.possession_changed.connect(_on_possession_changed)
 	EventBus.interaction_prompt.connect(_on_prompt)
 	EventBus.deploy_map_toggled.connect(_on_deploy_map)
 	_on_possession_changed(GameClient.my_entity)
+
+
+func _refresh_squad() -> void:
+	var slot := GameClient.my_slot()
+	if slot < 0:
+		_squad_label.text = "no squad"
+		_squad_label.add_theme_color_override("font_color", Color(0.6, 0.62, 0.66))
+		return
+	var squad := Roster.squad_of_slot(slot)
+	_squad_label.text = "TEAM %d  ·  %s SQUAD" % [Roster.team_of_slot(slot),
+		Roster.squad_name(squad).to_upper()]
+	_squad_label.add_theme_color_override("font_color", Roster.squad_colour(squad))
 
 
 func _on_possession_changed(entity: Node) -> void:

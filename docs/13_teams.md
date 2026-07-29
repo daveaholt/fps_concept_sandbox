@@ -37,7 +37,7 @@ The client never writes its own slot, and the lobby UI renders only what the ser
 
 ## Late join, leaving, switching
 
-- **Late join.** A peer connecting during PLAYING picks a free slot and enters the game on that squad's team. It does not wait for a new match, because there are no matches to wait for.
+- **Late join.** A peer connecting during PLAYING gets the slot picker and chooses, then deploys — it does not wait for a new match, because there are no matches to wait for. **A launch with a CLI mode flag is auto-assigned the first free slot instead**, which is what keeps the headless suite working; the client tells the server which it wants via `client_ready(auto_slot)`. Without that split, a human joining a running match was silently dropped into a random squad with no say, which is not what the lobby is for.
 - **Leaving.** Disconnect frees the slot immediately.
 - **Switching in the lobby.** Free — move to any unoccupied slot.
 - **Switching during PLAYING.** Not in v1. It implies despawning a live body, possibly one inside a vehicle, and re-deploying it on the other side. Deferred rather than half-built.
@@ -145,3 +145,5 @@ The main menu is Host, Join (with address entry) and Quit. The lobby is the slot
 - The bypass reuses the spec's own late-join rule rather than adding a parallel path: `client_ready_local` auto-assigns a free slot whenever the phase is already PLAYING, and a flagged launch starts in PLAYING. So the CLI route and a genuine late joiner take exactly the same code path, and there is no "test mode" branch to rot.
 - The host's own client needs a **local** roster mirror. `receive_roster` is `call_remote`, so a listen server never receives its own broadcast, and without the mirror the host's phase would stay LOBBY and its deploy map would never open. `_broadcast_roster` now calls `GameClient.apply_roster` directly and *then* RPCs remotes — the same shape as `submit_local_commands` for input.
 - The deploy map is gated on `phase == PLAYING`, and opens automatically on the transition out of LOBBY for anyone not already alive.
+- The lobby doubles as the mid-match slot picker: it is visible whenever the phase is LOBBY **or** the local player holds no slot. The Start button hides once the match is running, since there is nothing left to start.
+- The HUD carries a team and squad readout in the squad's colour, top-left, driven off `roster_changed`.
