@@ -62,8 +62,17 @@ Keyboard/mouse and an Xbox-layout gamepad both work at once — no mode switch, 
 | Weapons | `1` rifle · `2` pistol · scroll cycles | D-pad up/down · `Y` swaps |
 | Fullscreen | `F11` | — |
 | Deploy map | `M` — recon while alive; opens automatically at session start and on death | `Back` |
-| Vehicles | `E` to enter the tank, `F` to exit · `WASD` drives, `Space` brakes, `LMB` fires the cannon | `X` / `B` |
 | Dev damage | `K` — 25 damage to yourself, to exercise the death loop | — |
+
+In a vehicle (`E` enters, `F` / `B` exits, `C` / `A` switches seat):
+
+| | Keyboard / mouse | Gamepad |
+|---|---|---|
+| Tank driver | `WASD` drives, `Space` brakes, `LMB` fires the cannon | Left stick · `LB` · `RB` |
+| Heli pilot | `WASD` cyclic, `Q` `E` pedals, `Space` / `Ctrl` collective, `LMB` fires rockets | Right stick · Left stick X · `RT` / `LT` · `RB` |
+| Either gunner | `LMB` fires, `RMB` zooms — the infantry scheme, since that is what a gunner is | `RT` / `LT` |
+
+On-screen hints follow the device you last touched, so they read `A` on a pad and `C` on a keyboard for the same action.
 
 ## Project layout
 

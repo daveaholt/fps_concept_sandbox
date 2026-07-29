@@ -76,6 +76,10 @@ func _start_local_systems() -> void:
 	scanner.name = "InteractionScanner"
 	add_child(scanner)
 
+	var zoom := GunnerZoom.new()
+	zoom.name = "GunnerZoom"
+	add_child(zoom)
+
 	window = WindowMode.new()
 	window.name = "WindowMode"
 	add_child(window)

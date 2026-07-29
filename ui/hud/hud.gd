@@ -1,5 +1,7 @@
 extends Control
 
+const RETICLE_RANGE := 150.0
+
 var _entity: Node = null
 
 @onready var _crosshair: Control = $Crosshair
@@ -11,10 +13,18 @@ var _entity: Node = null
 var _squad_label: Label
 var _ticket_label: Label
 var _result_label: Label
+var _controls_label: Label
 
 
 func _ready() -> void:
 	var panel: VBoxContainer = $Bottom
+	_controls_label = Label.new()
+	_controls_label.name = "ControlsLabel"
+	_controls_label.add_theme_color_override("font_color", Color(0.72, 0.76, 0.82))
+	_controls_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_controls_label.add_theme_constant_override("outline_size", 5)
+	panel.add_child(_controls_label)
+
 	_squad_label = Label.new()
 	_squad_label.name = "SquadLabel"
 	panel.add_child(_squad_label)
@@ -105,6 +115,58 @@ func _process(_delta: float) -> void:
 		_vehicle_panel()
 	else:
 		_infantry_panel()
+	_refresh_controls()
+
+
+func _refresh_controls() -> void:
+	if not _entity.is_in_group("vehicle"):
+		_controls_label.text = ""
+		return
+	var hints := ["%s fire" % InputHints.label(_fire_action())]
+	if _seat() > Seats.DRIVER:
+		hints.append("%s zoom" % InputHints.label("zoom"))
+	if _entity.seats.count() > 1:
+		hints.append("%s switch seat" % InputHints.label("switch_seat"))
+	hints.append("%s exit" % InputHints.label("exit_vehicle"))
+	_controls_label.text = "   ·   ".join(hints)
+
+
+func _seat() -> int:
+	return _entity.seat_of(GameClient.get_peer_id())
+
+
+func _fire_action() -> String:
+	return "vehicle_fire" if _seat() == Seats.DRIVER else "fire"
+
+
+func _aim_reticle() -> void:
+	var camera := get_viewport().get_camera_3d()
+	var centre := get_viewport_rect().size * 0.5
+	if camera == null or not _entity.has_method("weapon_ray"):
+		_crosshair.global_position = centre
+		return
+	var ray: Array = _entity.weapon_ray(_seat())
+	if ray.size() < 3:
+		_crosshair.global_position = centre
+		return
+	var point := _impact_point(ray[0] as Vector3, ray[1] as Vector3, ray[2] as int)
+	if camera.is_position_behind(point):
+		_crosshair.modulate.a = 0.0
+		return
+	_crosshair.global_position = camera.unproject_position(point)
+
+
+func _impact_point(origin: Vector3, direction: Vector3, params_id: int) -> Vector3:
+	var flat := origin + direction * RETICLE_RANGE
+	var manager := GameClient.ballistics
+	if manager == null:
+		return flat
+	var params: ProjectileParams = manager.params_for(params_id)
+	if params == null or params.muzzle_velocity <= 0.0:
+		return flat
+	var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
+	var flight := RETICLE_RANGE / params.muzzle_velocity
+	return flat + Vector3.DOWN * 0.5 * gravity * params.gravity_scale * flight * flight
 
 
 func _infantry_panel() -> void:
@@ -119,6 +181,7 @@ func _infantry_panel() -> void:
 	_draw_bar.visible = drawing
 	_draw_bar.value = state.switch_progress * 100.0
 	_crosshair.modulate.a = 0.35 if drawing else 1.0
+	_crosshair.global_position = get_viewport_rect().size * 0.5
 
 
 func _helicopter_panel() -> void:
@@ -126,16 +189,16 @@ func _helicopter_panel() -> void:
 		_entity.get_display_name(), _entity.speed_kmh(),
 		_entity.altitude_agl(), _entity.climb_rate()]
 
-	var seat: int = _entity.seat_of(GameClient.get_peer_id())
-	if seat == 1:
+	if _seat() > Seats.DRIVER:
 		_health_label.text = "%s   GUNNER   %.0f m AGL" % [
 			_entity.get_display_name(), _entity.altitude_agl()]
-		_weapon_label.text = "Minigun — RB   heat %.0f%%%s" % [
-			_entity.gun_heat() * 100.0,
+		_weapon_label.text = "Minigun — %s   heat %.0f%%%s" % [
+			InputHints.label("fire"), _entity.gun_heat() * 100.0,
 			"   OVERHEATED" if _entity.gun_heat() >= 1.0 else ""]
 		_draw_bar.visible = true
 		_draw_bar.value = _entity.gun_heat() * 100.0
 		_crosshair.modulate.a = 1.0
+		_aim_reticle()
 		return
 
 	var rotor: float = _entity.rotor_fraction()
@@ -151,26 +214,27 @@ func _helicopter_panel() -> void:
 
 	_draw_bar.visible = true
 	_draw_bar.value = _entity.collective_fraction() * 100.0
-	_crosshair.modulate.a = 0.0
+	_crosshair.modulate.a = 1.0 if _entity.can_hover() else 0.4
+	_aim_reticle()
 
 
 func _vehicle_panel() -> void:
 	_health_label.text = "%s   %.0f km/h" % [_entity.get_display_name(), _entity.speed_kmh()]
 
-	var seat: int = _entity.seat_of(GameClient.get_peer_id())
-	if seat == 1:
-		_weapon_label.text = "MG — RB   heat %.0f%%%s" % [
-			_entity.gun_heat() * 100.0,
+	if _seat() > Seats.DRIVER:
+		_weapon_label.text = "MG — %s   heat %.0f%%%s" % [
+			InputHints.label("fire"), _entity.gun_heat() * 100.0,
 			"   OVERHEATED" if _entity.gun_heat() >= 1.0 else ""]
 		_draw_bar.visible = true
 		_draw_bar.value = _entity.gun_heat() * 100.0
 		_crosshair.modulate.a = 1.0
+		_aim_reticle()
 		return
 
 	var reload: float = _entity.reload_fraction()
-	_weapon_label.text = "Cannon ready — RB" if reload >= 1.0 else "Reloading"
+	_weapon_label.text = ("Cannon ready — %s" % InputHints.label("vehicle_fire")
+		if reload >= 1.0 else "Reloading")
 	_draw_bar.visible = reload < 1.0
 	_draw_bar.value = reload * 100.0
-
-	var turret: Vector2 = _entity.turret_angles()
-	_crosshair.modulate.a = 1.0 if absf(turret.x) < 0.05 else 0.5
+	_crosshair.modulate.a = 1.0 if reload >= 1.0 else 0.5
+	_aim_reticle()

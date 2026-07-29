@@ -651,12 +651,18 @@ func submit_local_commands(peer_id: int, bundle: Array) -> void:
 	_ingest(peer_id, bundle)
 
 
+func _may_command(entity: Node, peer_id: int) -> bool:
+	if entity.has_method("seat_of"):
+		return entity.seat_of(peer_id) >= 0
+	return entity.owner_peer == peer_id
+
+
 func _ingest(peer_id: int, bundle: Array) -> void:
 	var entity: Node = _possession.get(peer_id)
 	if entity == null or not is_instance_valid(entity):
 		return
-	if entity.owner_peer != peer_id:
-		push_warning("[server] dropped commands from peer %d for an entity it does not own" % peer_id)
+	if not _may_command(entity, peer_id):
+		push_warning("[server] dropped commands from peer %d for an entity it does not occupy" % peer_id)
 		return
 
 	var queue: Array = _inputs.get(peer_id, [])

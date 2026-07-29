@@ -174,6 +174,18 @@ func gunner_peer() -> int:
 	return seats.occupant(GUNNER_SEAT)
 
 
+func weapon_ray(seat: int) -> Array:
+	if seat == GUNNER_SEAT:
+		if _gun_muzzle == null:
+			return []
+		return [_gun_muzzle.global_position, -_gun_muzzle.global_transform.basis.z,
+			gun_params_id]
+	if _pods.is_empty():
+		return []
+	var origin := (_pods[0].global_position + _pods[_pods.size() - 1].global_position) * 0.5
+	return [origin, -global_transform.basis.z, rocket_params_id]
+
+
 func gun_angles() -> Vector2:
 	return Vector2(_gun_yaw_angle, _gun_pitch_angle)
 

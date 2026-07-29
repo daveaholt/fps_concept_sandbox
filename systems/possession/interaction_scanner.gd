@@ -20,7 +20,7 @@ func _physics_process(_delta: float) -> void:
 		return
 
 	if entity.is_in_group("vehicle"):
-		_emit("%s — F to exit, C to switch seat" % entity.get_display_name())
+		_emit("")
 		_target = null
 		_poll_exit()
 		_poll_switch()
@@ -34,7 +34,8 @@ func _physics_process(_delta: float) -> void:
 	if _target == null:
 		_target = _overlap_fallback(entity)
 
-	_emit("Enter %s [E]" % _target.get_display_name() if _target != null else "")
+	_emit("Enter %s  [%s]" % [_target.get_display_name(), InputHints.label("interact")]
+		if _target != null else "")
 	_poll_enter()
 
 

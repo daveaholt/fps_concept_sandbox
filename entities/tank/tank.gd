@@ -152,6 +152,14 @@ func gunner_peer() -> int:
 	return seats.occupant(GUNNER_SEAT)
 
 
+func weapon_ray(seat: int) -> Array:
+	var node: Node3D = _gun_muzzle if seat == GUNNER_SEAT else _muzzle
+	if node == null:
+		return []
+	var params: int = gun_params_id if seat == GUNNER_SEAT else shell_params_id
+	return [node.global_position, -node.global_transform.basis.z, params]
+
+
 func gun_angles() -> Vector2:
 	return Vector2(_gun_yaw_angle, _gun_pitch_angle)
 

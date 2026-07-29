@@ -33,10 +33,13 @@ Every gameplay action carries **both** a keyboard/mouse binding and an Xbox-layo
 |---|---|---|---|
 | `move_forward` / `move_back` | W / S | Left stick Y | Tread throttle |
 | `move_left` / `move_right` | A / D | Left stick X | Differential steer (in place when no throttle) |
-| `fire` | LMB | RT | Cannon (shared action with infantry — safe, different possessee) |
-| `brake` | Space | A | Reuses jump's key; separate action name |
+| `vehicle_fire` | LMB | RB | Cannon, driver seat only |
+| `brake` | Space | LB | Reuses jump's key; separate action name |
 | *turret* | Mouse | Right stick | Turret yaw + cannon pitch follow camera |
+| `switch_seat` | C | A | Driver ↔ machine gunner |
 | `exit_vehicle` | F | B | |
+
+The machine gunner seat uses the infantry weapon controls: `fire` on **RT** / LMB, `zoom` on **LT** / RMB.
 
 ## Helicopter
 
@@ -48,10 +51,12 @@ Revised at M6 to a flight-game pad layout. The cyclic moved to the **right** sti
 | `heli_pitch_down` / `_up` | W / S | Right stick Y | Cyclic pitch. **Stick forward and W are nose down**, flight-stick convention |
 | `heli_roll_left` / `_right` | A / D | Right stick X | Cyclic roll |
 | `heli_yaw_left` / `_right` | Q / E | Left stick X | Pedals |
+| `vehicle_fire` | LMB | RB | Rocket pods, pilot seat only |
 | `toggle_camera` | V | R3 | Cockpit ↔ chase cam |
+| `switch_seat` | C | A | Pilot ↔ minigunner |
 | `exit_vehicle` | F | B | Only meaningful when landed (see 06) |
 
-Reserved, deliberately unbound until the features land: **RB** fire, **LB** zoom / secondary, **A** switch seats, **Y** weapon toggle. Left stick Y is unused in the heli. There is no engine button — see 06.
+The minigunner seat uses the infantry weapon controls: `fire` on **RT** / LMB, `zoom` on **LT** / RMB. Still unbound: **Y** weapon toggle. Left stick Y is unused in the heli. There is no engine button — see 06.
 
 The heli needs four analog channels (pitch, roll, yaw, collective) and `InputCommand` carries exactly four (`move.x/y`, `axes.x/y`), so no new network field was needed: `move` is the cyclic and `axes` is `(yaw, collective)`. The sampler fills them from the `heli_*` actions **only while the possessed entity is in the `helicopter` group**, which is why these are separate actions rather than rebindings of `move_*` — rebinding those would have moved infantry onto the right stick too.
 
@@ -93,5 +98,8 @@ Under the server-authoritative model (10), these actions are only ever read on t
 - **M7: the interaction scanner now gates enter/exit on window focus, like the sampler already did.** It polled `Input` directly with no focus check. Keyboard is focus-gated by the OS so this never showed, but **joypads are polled process-wide** — the same behaviour reported at M3 as "my controller controls both windows regardless of focus". The consequence was that one press of B exited the vehicle in *both* windows, which read as "exiting the heli exited both players". The decision lives in `InputFocus.may_act()`, a plain helper with no autoload reference, because `InteractionScanner` cannot be constructed in a `--script` harness — it references `GameClient`, and autoload identifiers do not resolve at compile time there.
 - M7: worth checking any other place that reads `Input` outside the sampler. Two-window testing makes an ungated poll look like a gameplay bug rather than an input bug, and it will not reproduce on the keyboard.
 - M7: `yaw_left` / `yaw_right` are **deleted**. They were the pre-M6 heli pedals, replaced by `heli_yaw_*`, and nothing had read them since. They were still holding LB and RB, which collided with the new `vehicle_fire` on RB and the tank brake moved to LB. A dead action that still owns a button is worse than no action at all.
-- M7: `vehicle_fire` (RB, left mouse) fires whatever the occupied seat holds — tank cannon, heli rockets, or either gunner's gun. It exists because `fire` sits on RT, which is the helicopter's collective: a pilot holding RT to climb would otherwise empty the rocket pods. The sampler routes `fire` to `vehicle_fire` whenever the possessed entity is a vehicle.
+- M7: `vehicle_fire` (RB, left mouse) fires what the **driver's** seat holds — tank cannon or heli rockets. It exists because `fire` sits on RT, which is the helicopter's collective: a pilot holding RT to climb would otherwise empty the rocket pods. The sampler picks the action from the occupied seat, not from "am I in a vehicle".
+- M7: **gunner seats keep the infantry scheme — RT fires, LT zooms.** The first cut routed every seat to `vehicle_fire`, which put the gunner on RB. A gunner is an infantry role that happens to sit in a vehicle, and the collective clash that justified RB only applies to the pilot. `InputSampler.fire_action()` returns `vehicle_fire` for `Seats.DRIVER` and `fire` for everyone else, so the rule is one function rather than a condition repeated per vehicle.
+- M7: added `zoom` (LT, right mouse). It drives `GunnerZoom`, a client-side node that narrows the active camera's FOV to 34°. It lives next to the sampler under `GameClient` rather than in the vehicle scripts, because those are sim code and must not read `Input` — and it stops writing `fov` entirely once back at the 75° default, so it cannot fight the ADS pass in the backlog.
+- M7: **on-screen prompts are device-aware.** They were hardcoded keyboard strings ("F to exit, C to switch seat"), which is unusable advice on a pad — there is no C on an Xbox controller. `InputHints` tracks the last device that produced an event and resolves an action to a label off the `InputMap` itself, so a rebinding cannot desynchronise the hint from the binding. Stick motion under 0.5 does not count as a pad event, or drift alone would flip the hints.
 - M7: `switch_seat` is A on the pad and **C** on the keyboard, not F — F is `exit_vehicle`, and binding both to one key meant switching seats also threw you out. The tank's pad brake moved A → LB to leave A free for seats, per the owner's control scheme.
