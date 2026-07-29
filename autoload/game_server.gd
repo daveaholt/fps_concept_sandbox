@@ -70,6 +70,8 @@ func _start(port: int, mode: NetCli.Mode) -> void:
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
 	is_active = true
+	if ballistics != null:
+		ballistics.authoritative = true
 	_port = port
 	print("[server] listening on udp/%d as peer %d (%s mode, max %d peers)"
 		% [port, multiplayer.get_unique_id(), NetCli.mode_name(mode), NetCli.MAX_PEERS])

@@ -14,16 +14,16 @@ var _result_label: Label
 
 
 func _ready() -> void:
+	var panel: VBoxContainer = $Bottom
 	_squad_label = Label.new()
 	_squad_label.name = "SquadLabel"
-	_squad_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_squad_label.position = Vector2(18.0, 14.0)
-	add_child(_squad_label)
+	panel.add_child(_squad_label)
+	panel.move_child(_squad_label, 0)
+
 	_ticket_label = Label.new()
 	_ticket_label.name = "TicketLabel"
-	_ticket_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_ticket_label.position = Vector2(18.0, 36.0)
-	add_child(_ticket_label)
+	panel.add_child(_ticket_label)
+	panel.move_child(_ticket_label, 1)
 
 	_result_label = Label.new()
 	_result_label.name = "ResultLabel"
