@@ -184,6 +184,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.9)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 mesh = SubResource("BoxMesh_mg")
 
+[node name="GunnerRig" type="Node3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="GunnerRig"]
+cull_mask = 1048573
+far = 2000.0
+
 [node name="SeatCameraRig" type="Node3D" parent="." unique_id=217722416]
 
 [node name="SpringArm3D" type="SpringArm3D" parent="SeatCameraRig" unique_id=1545462201]

@@ -38,6 +38,7 @@ const GUNNER_SEAT := 1
 
 @export var chase_spring_length: float = 10.0
 @export var chase_pivot_height: float = 2.2
+@export var gunner_eye_height: float = 0.35
 @export var chase_lag: float = 6.0
 @export var chase_pitch_deg: float = -8.0
 
@@ -56,6 +57,10 @@ var _chase_rig: Node3D
 var _chase_spring: SpringArm3D
 var _chase_camera: Camera3D
 var _chase_yaw: float = 0.0
+var _gunner_rig: Node3D
+var _gunner_camera: Camera3D
+var _gunner_view_aim: Vector3 = Vector3.FORWARD
+var _local_seat: int = -1
 
 var seats := Seats.new(SEAT_COUNT)
 var _pending: Array = []
@@ -99,6 +104,12 @@ func _ready() -> void:
 	_chase_rig = get_node_or_null("ChaseRig")
 	_chase_spring = get_node_or_null("ChaseRig/SpringArm3D")
 	_chase_camera = get_node_or_null("ChaseRig/SpringArm3D/Camera3D")
+	_gunner_rig = get_node_or_null("GunnerRig")
+	_gunner_camera = get_node_or_null("GunnerRig/Camera3D")
+	if _gunner_rig != null:
+		_gunner_rig.top_level = true
+	if _gunner_camera != null:
+		_gunner_camera.current = false
 
 	angular_damp = attitude_damping
 	can_sleep = false
@@ -200,21 +211,7 @@ func _step_gunner(delta: float) -> void:
 	_gun_cooldown = maxf(0.0, _gun_cooldown - delta)
 	if manned and cmd.aim.length_squared() > 0.000001:
 		_gun_aim = cmd.aim
-
-	var flat := Vector3(_gun_aim.x, 0.0, _gun_aim.z)
-	if flat.length_squared() > 0.000001:
-		var hull_yaw := global_transform.basis.get_euler().y
-		var want := wrapf(atan2(-flat.x, -flat.z) - hull_yaw, -PI, PI)
-		want = clampf(want, deg_to_rad(-gun_yaw_limit_deg), deg_to_rad(gun_yaw_limit_deg))
-		var step := deg_to_rad(gun_slew_deg) * delta
-		_gun_yaw_angle = wrapf(_gun_yaw_angle
-			+ clampf(wrapf(want - _gun_yaw_angle, -PI, PI), -step, step), -PI, PI)
-
-	var want_pitch := clampf(asin(clampf(_gun_aim.normalized().y, -1.0, 1.0)),
-		deg_to_rad(gun_pitch_min_deg), deg_to_rad(gun_pitch_max_deg))
-	_gun_pitch_angle += clampf(want_pitch - _gun_pitch_angle,
-		-deg_to_rad(gun_slew_deg) * delta, deg_to_rad(gun_slew_deg) * delta)
-	_apply_gun()
+	slew_gun(_gun_aim, delta)
 
 	if _gun_heat > 0.0:
 		_gun_heat = maxf(0.0, _gun_heat - gun_cool_rate * delta)
@@ -226,6 +223,23 @@ func _step_gunner(delta: float) -> void:
 	_gun_heat = minf(1.0, _gun_heat + gun_heat_per_shot)
 	gun_fired.emit(_gun_muzzle.global_position,
 		-_gun_muzzle.global_transform.basis.z, gun_params_id)
+
+
+func slew_gun(aim: Vector3, delta: float) -> void:
+	var flat := Vector3(aim.x, 0.0, aim.z)
+	if flat.length_squared() > 0.000001:
+		var hull_yaw := global_transform.basis.get_euler().y
+		var want := wrapf(atan2(-flat.x, -flat.z) - hull_yaw, -PI, PI)
+		want = clampf(want, deg_to_rad(-gun_yaw_limit_deg), deg_to_rad(gun_yaw_limit_deg))
+		var step := deg_to_rad(gun_slew_deg) * delta
+		_gun_yaw_angle = wrapf(_gun_yaw_angle
+			+ clampf(wrapf(want - _gun_yaw_angle, -PI, PI), -step, step), -PI, PI)
+
+	var want_pitch := clampf(asin(clampf(aim.normalized().y, -1.0, 1.0)),
+		deg_to_rad(gun_pitch_min_deg), deg_to_rad(gun_pitch_max_deg))
+	_gun_pitch_angle += clampf(want_pitch - _gun_pitch_angle,
+		-deg_to_rad(gun_slew_deg) * delta, deg_to_rad(gun_slew_deg) * delta)
+	_apply_gun()
 
 
 func _apply_gun() -> void:
@@ -248,10 +262,8 @@ func possess() -> void:
 
 func unpossess() -> void:
 	_possessed = false
-	if _cockpit_camera != null:
-		_cockpit_camera.current = false
-	if _chase_camera != null:
-		_chase_camera.current = false
+	_local_seat = -1
+	_activate_camera()
 	for i in _last_command.size():
 		_last_command[i] = InputCommand.new()
 
@@ -359,6 +371,8 @@ func get_net_state() -> Dictionary:
 		"q": global_transform.basis.get_rotation_quaternion(),
 		"rr": rotor_rpm_norm,
 		"co": collective,
+		"gy": _gun_yaw_angle,
+		"gp": _gun_pitch_angle,
 		"v": linear_velocity,
 		"o": owner_peer,
 		"st": seats.to_array(),
@@ -372,6 +386,10 @@ func apply_replicated_state(net_state: Dictionary) -> void:
 	global_transform = Transform3D(Basis(quat), net_state.get("p", global_position))
 	rotor_rpm_norm = net_state.get("rr", rotor_rpm_norm)
 	collective = net_state.get("co", collective)
+	if not _predict_gun():
+		_gun_yaw_angle = net_state.get("gy", _gun_yaw_angle)
+		_gun_pitch_angle = net_state.get("gp", _gun_pitch_angle)
+		_apply_gun()
 	linear_velocity = net_state.get("v", linear_velocity)
 	owner_peer = net_state.get("o", owner_peer)
 	var wire: Array = net_state.get("st", [])
@@ -499,7 +517,13 @@ func _process(delta: float) -> void:
 	_spin_rotors(delta)
 	if not _possessed:
 		return
+	if _predict_gun():
+		slew_gun(_gunner_view_aim, delta)
 	_update_cameras(delta)
+
+
+func _predict_gun() -> bool:
+	return not _server_authority and _possessed and _local_seat == GUNNER_SEAT
 
 
 func _spin_rotors(delta: float) -> void:
@@ -510,13 +534,40 @@ func _spin_rotors(delta: float) -> void:
 
 
 func _activate_camera() -> void:
+	var gunning := _possessed and _local_seat == GUNNER_SEAT
 	if _cockpit_camera != null:
-		_cockpit_camera.current = _possessed and not _chase_active
+		_cockpit_camera.current = _possessed and not gunning and not _chase_active
 	if _chase_camera != null:
-		_chase_camera.current = _possessed and _chase_active
+		_chase_camera.current = _possessed and not gunning and _chase_active
+	if _gunner_camera != null:
+		_gunner_camera.current = gunning
+
+
+func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
+	if seat != _local_seat:
+		_local_seat = seat
+		_activate_camera()
+	if seat == GUNNER_SEAT:
+		_gunner_view_aim = aim
+
+
+func _update_gunner_camera() -> void:
+	if _gunner_rig == null or _gun_yaw == null:
+		return
+	var flat := Vector3(_gunner_view_aim.x, 0.0, _gunner_view_aim.z)
+	if flat.length_squared() < 0.000001:
+		flat = Vector3.FORWARD
+	var yaw := atan2(-flat.x, -flat.z)
+	var pitch := asin(clampf(_gunner_view_aim.normalized().y, -1.0, 1.0))
+	_gunner_rig.global_position = _gun_yaw.global_position + Vector3.UP * gunner_eye_height
+	_gunner_rig.global_rotation = Vector3(pitch, yaw, 0.0)
 
 
 func _update_cameras(delta: float) -> void:
+	if _local_seat == GUNNER_SEAT:
+		_update_gunner_camera()
+		return
+
 	if _cockpit_camera != null and not _chase_active:
 		_cockpit_camera.rotation = Vector3.ZERO
 

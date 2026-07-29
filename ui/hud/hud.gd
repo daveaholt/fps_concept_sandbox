@@ -123,7 +123,8 @@ func _refresh_controls() -> void:
 		_controls_label.text = ""
 		return
 	var hints := ["%s fire" % InputHints.label(_fire_action())]
-	if _seat() > Seats.DRIVER:
+	var sampler := GameClient.sampler
+	if sampler != null and sampler.can_zoom():
 		hints.append("%s zoom" % InputHints.label("zoom"))
 	if _entity.seats.count() > 1:
 		hints.append("%s switch seat" % InputHints.label("switch_seat"))
@@ -136,7 +137,8 @@ func _seat() -> int:
 
 
 func _fire_action() -> String:
-	return "vehicle_fire" if _seat() == Seats.DRIVER else "fire"
+	var sampler := GameClient.sampler
+	return sampler.fire_action() if sampler != null else "fire"
 
 
 func _aim_reticle() -> void:
@@ -193,7 +195,7 @@ func _helicopter_panel() -> void:
 		_health_label.text = "%s   GUNNER   %.0f m AGL" % [
 			_entity.get_display_name(), _entity.altitude_agl()]
 		_weapon_label.text = "Minigun — %s   heat %.0f%%%s" % [
-			InputHints.label("fire"), _entity.gun_heat() * 100.0,
+			InputHints.label(_fire_action()), _entity.gun_heat() * 100.0,
 			"   OVERHEATED" if _entity.gun_heat() >= 1.0 else ""]
 		_draw_bar.visible = true
 		_draw_bar.value = _entity.gun_heat() * 100.0
@@ -223,7 +225,7 @@ func _vehicle_panel() -> void:
 
 	if _seat() > Seats.DRIVER:
 		_weapon_label.text = "MG — %s   heat %.0f%%%s" % [
-			InputHints.label("fire"), _entity.gun_heat() * 100.0,
+			InputHints.label(_fire_action()), _entity.gun_heat() * 100.0,
 			"   OVERHEATED" if _entity.gun_heat() >= 1.0 else ""]
 		_draw_bar.visible = true
 		_draw_bar.value = _entity.gun_heat() * 100.0
@@ -232,7 +234,7 @@ func _vehicle_panel() -> void:
 		return
 
 	var reload: float = _entity.reload_fraction()
-	_weapon_label.text = ("Cannon ready — %s" % InputHints.label("vehicle_fire")
+	_weapon_label.text = ("Cannon ready — %s" % InputHints.label(_fire_action())
 		if reload >= 1.0 else "Reloading")
 	_draw_bar.visible = reload < 1.0
 	_draw_bar.value = reload * 100.0

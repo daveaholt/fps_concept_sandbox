@@ -33,13 +33,14 @@ Every gameplay action carries **both** a keyboard/mouse binding and an Xbox-layo
 |---|---|---|---|
 | `move_forward` / `move_back` | W / S | Left stick Y | Tread throttle |
 | `move_left` / `move_right` | A / D | Left stick X | Differential steer (in place when no throttle) |
-| `vehicle_fire` | LMB | RB | Cannon, driver seat only |
+| `fire` | LMB | RT | Cannon, driver seat only |
+| `zoom` | RMB | LT | |
 | `brake` | Space | LB | Reuses jump's key; separate action name |
 | *turret* | Mouse | Right stick | Turret yaw + cannon pitch follow camera |
 | `switch_seat` | C | A | Driver ↔ machine gunner |
 | `exit_vehicle` | F | B | |
 
-The machine gunner seat uses the infantry weapon controls: `fire` on **RT** / LMB, `zoom` on **LT** / RMB.
+Both tank seats use the infantry weapon controls — **RT** fires, **LT** zooms. The tank drives on the left stick and never touches the triggers, so there is nothing for them to collide with.
 
 ## Helicopter
 
@@ -103,3 +104,4 @@ Under the server-authoritative model (10), these actions are only ever read on t
 - M7: added `zoom` (LT, right mouse). It drives `GunnerZoom`, a client-side node that narrows the active camera's FOV to 34°. It lives next to the sampler under `GameClient` rather than in the vehicle scripts, because those are sim code and must not read `Input` — and it stops writing `fov` entirely once back at the 75° default, so it cannot fight the ADS pass in the backlog.
 - M7: **on-screen prompts are device-aware.** They were hardcoded keyboard strings ("F to exit, C to switch seat"), which is unusable advice on a pad — there is no C on an Xbox controller. `InputHints` tracks the last device that produced an event and resolves an action to a label off the `InputMap` itself, so a rebinding cannot desynchronise the hint from the binding. Stick motion under 0.5 does not count as a pad event, or drift alone would flip the hints.
 - M7: `switch_seat` is A on the pad and **C** on the keyboard, not F — F is `exit_vehicle`, and binding both to one key meant switching seats also threw you out. The tank's pad brake moved A → LB to leave A free for seats, per the owner's control scheme.
+- **M7: RB is now the helicopter pilot's button alone.** The rule had been "drivers fire on RB", which put the tank commander there too. The tank does not use the triggers for anything — it drives on the left stick — so there was no clash to avoid, and RT/LT is the scheme every other weapon in the game uses. `fire_action()` returns `vehicle_fire` only while `_is_piloting()`, and `can_zoom()` is every vehicle seat except that one. Both are read by the HUD as well, so a label cannot disagree with what the button does.

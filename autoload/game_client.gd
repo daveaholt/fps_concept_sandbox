@@ -143,7 +143,7 @@ func _physics_process(delta: float) -> void:
 	if is_predicting():
 		_predict(cmd, delta)
 	elif my_entity.has_method("set_local_aim"):
-		my_entity.set_local_aim(cmd.aim)
+		my_entity.set_local_aim(cmd.aim, my_seat())
 	send_command(cmd)
 
 
@@ -372,6 +372,14 @@ func _on_possession_granted(peer_id: int, entity: Node) -> void:
 	if peer_id != get_peer_id():
 		return
 	set_my_entity(entity)
+
+
+func my_seat() -> int:
+	if my_entity == null or not is_instance_valid(my_entity):
+		return -1
+	if not my_entity.has_method("seat_of"):
+		return -1
+	return my_entity.seat_of(get_peer_id())
 
 
 func set_my_entity(entity: Node) -> void:

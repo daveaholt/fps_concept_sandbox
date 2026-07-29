@@ -29,7 +29,7 @@ func target_fov() -> float:
 
 func zooming() -> bool:
 	var sampler := GameClient.sampler
-	if sampler == null or not sampler.is_gunner():
+	if sampler == null or not sampler.can_zoom():
 		return false
 	return InputFocus.may_act(sampler) and Input.is_action_pressed("zoom")
 

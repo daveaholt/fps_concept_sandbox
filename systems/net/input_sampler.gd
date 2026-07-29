@@ -149,11 +149,11 @@ func _bot_driver_command() -> InputCommand:
 
 
 func fire_action() -> String:
-	return "vehicle_fire" if vehicle_seat() == Seats.DRIVER else "fire"
+	return "vehicle_fire" if _is_piloting() else "fire"
 
 
-func is_gunner() -> bool:
-	return vehicle_seat() > Seats.DRIVER
+func can_zoom() -> bool:
+	return vehicle_seat() >= Seats.DRIVER and not _is_piloting()
 
 
 func vehicle_seat() -> int:
