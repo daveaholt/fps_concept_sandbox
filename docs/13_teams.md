@@ -132,3 +132,11 @@ The main menu is Host, Join (with address entry) and Quit. The lobby is the slot
 
 - Squad-spawn is in v1, so squads mean something mechanically from the start. Anything further — squad voice, squad orders, shared squad objectives — is a separate feature and belongs on the backlog, not here.
 - The dispersal radius is one number and wants tuning against sixteen players, not two. Too small and bodies still stack; too large and a squad spawns scattered across a hillside.
+
+## Implementation notes
+
+- **Part 1 (server model + friendly fire) is built.** `systems/teams/roster.gd` owns the sixteen slots and derives team and squad from them; `GameServer` holds the phase, the roster, and the `request_slot` / `request_start` RPCs, validating and logging rejections the same way enter/exit does. `fill_with_bots()` exists and does nothing, as specced.
+- The friendly-fire rule lives on `Roster` as a static, **not** on `GameServer`. The first version put it on the autoload and had `BallisticsManager` call it, which broke every `--script` harness that compile-depends on ballistics: autoload identifiers do not resolve at compile time in a `--script` main loop, a trap this project has hit before. It also violated 01's rule that sim code does not reach for autoloads. `Roster` is a plain class, so ballistics depends on nothing global.
+- For the same reason **a vehicle's team is a stored field set by the server on entry**, not derived by asking the autoload who the driver is. Set in `handle_enter_request`, cleared on both exit paths.
+- **Infantry team is stamped inside `_spawn_infantry`, not at the call sites.** The first version set it only on the deploy path, which meant a player exiting a vehicle respawned unaligned and could be shot by their own squad. It is now one assignment in the one function every spawn path already goes through.
+- Still to build: the main menu and lobby UI (part 2), and squad-spawn with randomised dispersal (part 3). The deploy map still shows every spawn point to everyone and no player markers at all, which is 07's pre-teams behaviour and remains correct until part 3.
