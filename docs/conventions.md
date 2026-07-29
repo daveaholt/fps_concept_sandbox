@@ -51,4 +51,4 @@ Use the `_console` build when you need stdout; the plain `.exe` swallows it.
 
 ## Status
 
-Current milestone status is the table in `README.md`. **M6 is closed** (tag `m6`) — both halves of its gate are met: the 06 acceptance criteria pass headlessly, and the 100 ms interpolated-flight verdict is flown and recorded in 06 and 10. **MH** (hosted friend test) and **M7** (polish) are both open; MH is the smaller of the two.
+Current milestone status is the table in `README.md`. **M6 is closed** (tag `m6`) — both halves of its gate are met: the 06 acceptance criteria pass headlessly, and the 100 ms interpolated-flight verdict is flown and recorded in 06 and 10. **M7** (polish and feature set) is next. **MH** (hosted friend test) is deferred behind it — the Azure VM is a running cost and is not worth paying until there is something worth inviting people to.

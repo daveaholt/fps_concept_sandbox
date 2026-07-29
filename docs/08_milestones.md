@@ -46,13 +46,15 @@ Heli per 06 reusing the 04 framework and the vehicle replication path from M5 un
 
 ## MH — Hosted friend test (added with 12; runs any time after M6, before inviting friends)
 
+**Deferred past M7 by the repo owner: the VM is a running cost and there is no point paying it before there is something worth inviting people to.** Nothing in M7 depends on MH, and MH depends only on M6 being closed, so the order is free.
+
 Implement the embedded-key auth handshake per 10 (nonce challenge, HMAC reply, 2 s drop, gitignored `secrets/auth_key.txt` baked into exports) and stand up the Azure server per 12 (VM, NSG, systemd unit, DNS label, auto-shutdown, deploy script).
 
 **Gate:** a friend connects from the internet via the DNS hostname and plays; a client with a wrong/missing key (debug flag) is dropped within 2 s and logged; the server survives a session and `az vm deallocate` ends billing.
 
 ## M7 — Sandbox polish pass (open-ended)
 
-Backlog, any order: passenger seats · vehicle icons + *squad/team* players on deploy map (never all players — see 07) · exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · tank cockpit cam · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
+Backlog, any order: passenger seats · **helicopter armament — chin minigun + rocket pods, gunner-operated, so it lands with passenger seats** · vehicle icons + *squad/team* players on deploy map (never all players — see 07) · exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · tank cockpit cam · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
 
 ## Working agreements
 
