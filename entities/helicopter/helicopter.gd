@@ -21,12 +21,12 @@ const GUNNER_SEAT := 1
 @export var rocket_salvo: int = 4
 @export var rocket_reload: float = 3.2
 @export var gun_params_id: int = 3
-@export var gun_rate_per_second: float = 12.0
-@export var gun_slew_deg: float = 110.0
+@export var gun_rate_per_second: float = 18.0
+@export var gun_slew_deg: float = 300.0
 @export var gun_yaw_limit_deg: float = 120.0
-@export var gun_pitch_min_deg: float = -35.0
-@export var gun_pitch_max_deg: float = 20.0
-@export var gun_heat_per_shot: float = 0.035
+@export var gun_pitch_min_deg: float = -75.0
+@export var gun_pitch_max_deg: float = 15.0
+@export var gun_heat_per_shot: float = 0.018
 @export var gun_cool_rate: float = 0.45
 @export var exit_max_speed: float = 2.0
 @export var exit_max_altitude: float = 3.0
@@ -38,7 +38,7 @@ const GUNNER_SEAT := 1
 
 @export var chase_spring_length: float = 10.0
 @export var chase_pivot_height: float = 2.2
-@export var gunner_eye_height: float = 0.35
+@export var gunner_eye_offset := Vector3(0.0, 1.45, -2.3)
 @export var chase_lag: float = 6.0
 @export var chase_pitch_deg: float = -8.0
 
@@ -373,6 +373,7 @@ func get_net_state() -> Dictionary:
 		"co": collective,
 		"gy": _gun_yaw_angle,
 		"gp": _gun_pitch_angle,
+		"gh": _gun_heat,
 		"v": linear_velocity,
 		"o": owner_peer,
 		"st": seats.to_array(),
@@ -390,6 +391,7 @@ func apply_replicated_state(net_state: Dictionary) -> void:
 		_gun_yaw_angle = net_state.get("gy", _gun_yaw_angle)
 		_gun_pitch_angle = net_state.get("gp", _gun_pitch_angle)
 		_apply_gun()
+	_gun_heat = net_state.get("gh", _gun_heat)
 	linear_velocity = net_state.get("v", linear_velocity)
 	owner_peer = net_state.get("o", owner_peer)
 	var wire: Array = net_state.get("st", [])
@@ -552,14 +554,14 @@ func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
 
 
 func _update_gunner_camera() -> void:
-	if _gunner_rig == null or _gun_yaw == null:
+	if _gunner_rig == null:
 		return
 	var flat := Vector3(_gunner_view_aim.x, 0.0, _gunner_view_aim.z)
 	if flat.length_squared() < 0.000001:
 		flat = Vector3.FORWARD
 	var yaw := atan2(-flat.x, -flat.z)
 	var pitch := asin(clampf(_gunner_view_aim.normalized().y, -1.0, 1.0))
-	_gunner_rig.global_position = _gun_yaw.global_position + Vector3.UP * gunner_eye_height
+	_gunner_rig.global_position = to_global(gunner_eye_offset)
 	_gunner_rig.global_rotation = Vector3(pitch, yaw, 0.0)
 
 
