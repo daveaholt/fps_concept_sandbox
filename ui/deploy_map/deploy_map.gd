@@ -9,6 +9,7 @@ var _selected: SpawnPoint = null
 var _selected_mate: int = 0
 var _markers: Dictionary = {}
 var _mate_markers: Dictionary = {}
+var _built_targets: Array = []
 
 @onready var _viewport: SubViewport = $ViewportBox/Viewport
 @onready var _camera: Camera3D = $ViewportBox/Viewport/TopDownCamera
@@ -71,7 +72,8 @@ func _build_markers() -> void:
 		_marker_layer.add_child(button)
 		_markers[point] = button
 
-	for mate in GameClient.squadmate_spawn_targets():
+	_built_targets = GameClient.squadmate_spawn_targets()
+	for mate in _built_targets:
 		var button := Button.new()
 		button.text = "▲ Player %d" % mate
 		button.custom_minimum_size = MARKER_SIZE
@@ -110,6 +112,8 @@ func _on_deploy_pressed() -> void:
 func _process(_delta: float) -> void:
 	if not visible:
 		return
+	if GameClient.squadmate_spawn_targets() != _built_targets:
+		_build_markers()
 	_project_markers()
 	_refresh()
 
