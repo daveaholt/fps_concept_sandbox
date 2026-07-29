@@ -7,6 +7,7 @@ const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
 const SPAWN_DISPERSAL_RADIUS := 4.5
 const SPAWN_DISPERSAL_TRIES := 12
+const SPAWN_DISPERSAL_FALLBACK := 1.2
 
 enum Phase { LOBBY, PLAYING, RESULT }
 
@@ -482,7 +483,8 @@ func disperse(base: Vector3) -> Vector3:
 		var candidate := base + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
 		if _spawn_is_clear(candidate, space):
 			return candidate
-	return base
+	var last := randf() * TAU
+	return base + Vector3(cos(last), 0.0, sin(last)) * SPAWN_DISPERSAL_FALLBACK
 
 
 func _spawn_is_clear(feet: Vector3, space: PhysicsDirectSpaceState3D) -> bool:

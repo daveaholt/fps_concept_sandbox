@@ -192,6 +192,7 @@ func get_net_state() -> Dictionary:
 		"cp": _cannon_pitch_angle,
 		"v": linear_velocity,
 		"o": owner_peer,
+		"st": seats.to_array(),
 	}
 
 
@@ -204,6 +205,12 @@ func apply_replicated_state(net_state: Dictionary) -> void:
 		_turret_yaw_angle = net_state.get("ty", _turret_yaw_angle)
 		_cannon_pitch_angle = net_state.get("cp", _cannon_pitch_angle)
 	owner_peer = net_state.get("o", owner_peer)
+	var wire: Array = net_state.get("st", [])
+	if not wire.is_empty():
+		seats.clear()
+		for i in mini(wire.size(), seats.count()):
+			if int(wire[i]) != 0:
+				seats.take(int(wire[i]), i)
 	_apply_turret()
 
 

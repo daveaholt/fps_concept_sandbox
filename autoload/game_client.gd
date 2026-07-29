@@ -439,10 +439,14 @@ func request_spawn(spawn_point: SpawnPoint) -> void:
 
 
 func squadmate_entity(mate_peer: int) -> Node3D:
-	if _players_root == null:
-		return null
-	var node := _players_root.get_node_or_null("Player_%d" % mate_peer)
-	return node as Node3D
+	if _players_root != null:
+		var body := _players_root.get_node_or_null("Player_%d" % mate_peer)
+		if body != null and not body.is_queued_for_deletion():
+			return body as Node3D
+	for vehicle in get_tree().get_nodes_in_group("vehicle"):
+		if vehicle.seats.has_peer(mate_peer):
+			return vehicle as Node3D
+	return null
 
 
 func squadmate_spawn_targets() -> Array:
