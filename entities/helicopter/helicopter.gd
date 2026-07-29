@@ -1,10 +1,10 @@
 extends RigidBody3D
 
 @export var max_lift: float = 34000.0
-@export var collective_rate: float = 1.5
+@export var collective_rate: float = 1.9
 @export var spool_rate: float = 0.25
 @export var cyclic_torque: float = 9500.0
-@export var pedal_torque: float = 10000.0
+@export var pedal_torque: float = 13000.0
 @export var attitude_damping: float = 3.0
 @export var auto_level: float = 0.35
 

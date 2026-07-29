@@ -31,10 +31,10 @@ Plus `linear_drag` (quadratic-ish via `linear_damp`) so top speed self-limits.
 |---|---|---|
 | `mass` | 2200 kg | |
 | `max_lift` | ~~1.35~~ **1.58 × m·g** (34000 N) | Climb 11.4 m/s at full collective; hover trims at 63% collective |
-| `collective_rate` | ~~0.8~~ ~~1.1~~ **1.5 /s** | 0.57 s from hover to a 3 m/s descent |
+| `collective_rate` | ~~0.8 → 1.1 → 1.5~~ **1.9 /s** | 0.52 s from hover to a 3 m/s descent |
 | `spool_rate` | 0.25 /s | |
 | `cyclic_torque` | ~~14000~~ ~~11500~~ **9500 N·m** | Right stick: pitch & roll. 16 deg/s peak, 11.1° of tilt after 1 s |
-| `pedal_torque` | ~~9000~~ ~~7500~~ **10000 N·m** | Left stick: yaw. 17 deg/s |
+| `pedal_torque` | ~~9000 → 7500 → 10000~~ **13000 N·m** | Left stick: yaw. 22 deg/s |
 | `attitude_damping` | 3.0 | angular_damp equivalent |
 | `auto_level` | 0.35 | 0 = manual, 1 = self-leveling drone |
 | `linear_damp` | 0.15 | |
@@ -88,3 +88,4 @@ Rotor RPM %, collective %, altitude (ray-derived AGL), speed, climb rate, "Land 
 - M6: two suite assertions had tuning values frozen into them and broke on this change — `max_lift` pinned to 1.35× within 400 N, and the hover floor pinned above 0.8. Both now assert the *relationship* instead: lift-to-weight within a sane band, and the floor equal to `sqrt(m*g / max_lift)`. Same trap as the tank's spring length and armour-sector probe: a test that hardcodes a number a human is expected to tune will fail the moment they tune it, and teaches nothing when it does.
 - M6 tuning: second pilot-led pass, again one number per axis. Right stick calmer (`cyclic_torque` −17% → 16 deg/s peak, 11.1° of tilt after a second), left stick livelier (`pedal_torque` +33% → 17 deg/s yaw), collective quicker again (`collective_rate` +36% → 0.57 s from hover to a 3 m/s descent). Note yaw moved *down* last pass and *up* this one; the pilot's target was between the two, which is what iteration looks like and is not worth trying to shortcut with a measurement.
 - M6: "responsive to changes in rotor speed" was read as the collective, not `spool_rate`. Rotor rpm only changes during spool-up and spool-down, so in flight the only thing a pilot can change is collective. `spool_rate` is still 0.25/s (~4 s), which 06 wants as a deliberate event. If the intent was actually a shorter spool, that is a one-number change and a spec deviation worth noting.
+- M6 tuning: third pilot pass. Right stick declared correct at 9500 N·m and frozen; left stick and collective pushed one more step in the same direction (`pedal_torque` +30% → 22 deg/s yaw, `collective_rate` +27% → 0.52 s to a 3 m/s descent). Final numbers: pitch 16 deg/s, yaw 22 deg/s, collective 0.52 s, lift-to-weight 1.58.
