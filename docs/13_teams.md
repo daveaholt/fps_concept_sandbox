@@ -68,7 +68,18 @@ The deploy map offers two kinds of destination:
 - **The fixed spawn points**, shared by everyone, as today.
 - **Any living squadmate**, who becomes a spawn location for the rest of their squad.
 
-A squadmate is a valid destination when they are **alive and on foot**. Riding in a vehicle does not offer a spawn — placing a soldier next to a moving tank or a hovering helicopter is a death sentence or a physics problem, and 04 already declined to inherit vehicle momentum on exit for the same reason.
+A squadmate is a valid destination when they are alive and either:
+
+- **on foot** — you appear beside them, dispersed as below; or
+- **in a vehicle that has a free passenger seat** — you appear **in the seat**, in flight or not.
+
+Spawning into a seat is the *safest* of the three cases, not the riskiest: there is no world placement and no momentum handoff at all, because the occupant is bound to the vehicle rather than positioned near it. An earlier draft of this document ruled vehicles out on the grounds that dropping a soldier next to a moving tank or hovering helicopter is a physics problem. That reasoning was sound and the conclusion was wrong — it argued against placing someone *beside* a vehicle, which seat-spawning never does.
+
+A squadmate whose vehicle is **full** is not a valid destination. Neither is a dead one.
+
+**This half depends on passenger seats**, which do not exist yet (M7 backlog). Until they land, only the on-foot case is live. When they land, the helicopter gains a genuine role as a mobile squad spawn, which is a real gameplay lever and worth watching: combined with the deliberate absence of a combat-safety rule below, a helicopter loitering over a fight becomes a spawn beacon. That may be excellent or may need a rule; it is not knowable in advance.
+
+If the tank ever gains a **second seat** — a machine gunner is the obvious candidate — it is spawnable on exactly the same terms when unoccupied. Nothing here is helicopter-specific; the rule is "a free passenger seat", whatever carries it.
 
 There is deliberately **no combat-safety rule** in v1 — no "not recently damaged" timer, no enemy-proximity check. Spawning onto a squadmate mid-firefight is allowed and will sometimes be a mistake. Adding a rule is easy later; guessing at the right one now is not.
 
@@ -109,7 +120,8 @@ The main menu is Host, Join (with address entry) and Quit. The lobby is the slot
 - A slot already held cannot be taken by a second player; the request is rejected and logged, and the board does not move.
 - Start with fewer than sixteen players works; empty slots are simply absent from the match.
 - A player's team and squad survive the trip into the world: HUD shows the right colour, deploy-map markers show squadmates and never the enemy.
-- A living squadmate on foot is offered as a spawn destination; one in a vehicle or dead is not.
+- A living squadmate on foot is offered as a spawn destination; a dead one is not.
+- Once passenger seats exist: a squadmate in a vehicle with a free seat is offered, and choosing them puts the player *in the seat* rather than beside the vehicle, whether it is parked or in flight. A squadmate in a full vehicle is not offered.
 - Sixteen deploys at one point produce sixteen distinct positions, none inside geometry, none stacked.
 - Shooting a squadmate does nothing. Shooting an enemy, a range dummy, or an empty vehicle does what it does today.
 - A peer joining mid-match takes a free slot and plays.
