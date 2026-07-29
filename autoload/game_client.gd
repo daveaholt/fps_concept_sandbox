@@ -462,6 +462,29 @@ func squadmate_spawn_targets() -> Array:
 	return out
 
 
+func squadmate_marker_info(mate_peer: int) -> Dictionary:
+	var body := squadmate_entity(mate_peer)
+	if body == null or not is_instance_valid(body):
+		return {}
+	if body.is_in_group("helicopter"):
+		return {"entity": body, "kind": "heli",
+			"available": body.has_free_seat(), "reason": "full"}
+	if body.is_in_group("vehicle"):
+		return {"entity": body, "kind": "tank",
+			"available": body.has_free_seat(), "reason": "full"}
+	return {"entity": body, "kind": "infantry", "available": true, "reason": ""}
+
+
+func squadmates_on_map() -> Array:
+	var out: Array = []
+	if phase != GameServer.Phase.PLAYING:
+		return out
+	for mate in roster.squadmates(get_peer_id()):
+		if not squadmate_marker_info(mate).is_empty():
+			out.append(mate)
+	return out
+
+
 func request_squad_spawn(mate_peer: int) -> void:
 	if mate_peer <= 0:
 		return

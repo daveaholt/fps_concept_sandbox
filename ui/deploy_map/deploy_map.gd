@@ -1,6 +1,10 @@
 extends Control
 
 const MARKER_SIZE := Vector2(150, 34)
+const UNAVAILABLE := Color(0.45, 0.47, 0.5)
+const SELECTED := Color(0.4, 1.0, 0.6)
+const KIND_ICON := {"infantry": "▲", "tank": "■", "heli": "✕"}
+const KIND_LABEL := {"infantry": "", "tank": "TANK ", "heli": "HELI "}
 
 @export var ortho_size: float = 230.0
 @export var camera_height: float = 150.0
@@ -72,14 +76,11 @@ func _build_markers() -> void:
 		_marker_layer.add_child(button)
 		_markers[point] = button
 
-	_built_targets = GameClient.squadmate_spawn_targets()
+	_built_targets = GameClient.squadmates_on_map()
 	for mate in _built_targets:
 		var button := Button.new()
-		button.text = "▲ Player %d" % mate
 		button.custom_minimum_size = MARKER_SIZE
 		button.size = MARKER_SIZE
-		button.add_theme_color_override("font_color",
-			Roster.squad_colour(Roster.squad_of_slot(GameClient.my_slot())))
 		button.pressed.connect(_on_mate_pressed.bind(mate))
 		_marker_layer.add_child(button)
 		_mate_markers[mate] = button
@@ -95,6 +96,9 @@ func _on_marker_pressed(point: SpawnPoint) -> void:
 
 
 func _on_mate_pressed(mate: int) -> void:
+	var info: Dictionary = GameClient.squadmate_marker_info(mate)
+	if info.is_empty() or not bool(info["available"]):
+		return
 	_selected_mate = mate
 	_selected = null
 	_refresh()
@@ -112,7 +116,7 @@ func _on_deploy_pressed() -> void:
 func _process(_delta: float) -> void:
 	if not visible:
 		return
-	if GameClient.squadmate_spawn_targets() != _built_targets:
+	if GameClient.squadmates_on_map() != _built_targets:
 		_build_markers()
 	_project_markers()
 	_refresh()
@@ -158,7 +162,26 @@ func _refresh() -> void:
 
 	for point in _markers:
 		var button: Button = _markers[point]
-		button.modulate = Color(0.4, 1.0, 0.6) if point == _selected else Color(1, 1, 1)
+		if not point.enabled:
+			button.modulate = UNAVAILABLE
+		else:
+			button.modulate = SELECTED if point == _selected else Color(1, 1, 1)
+
+	var squad_colour := Roster.squad_colour(Roster.squad_of_slot(GameClient.my_slot()))
 	for mate in _mate_markers:
 		var button: Button = _mate_markers[mate]
-		button.modulate = Color(0.4, 1.0, 0.6) if mate == _selected_mate else Color(1, 1, 1)
+		var info: Dictionary = GameClient.squadmate_marker_info(mate)
+		if info.is_empty():
+			button.visible = false
+			continue
+		var kind: String = info["kind"]
+		var free: bool = bool(info["available"])
+		button.text = "%s %sPlayer %d%s" % [KIND_ICON.get(kind, "▲"),
+			KIND_LABEL.get(kind, ""), mate, "" if free else "  (full)"]
+		button.disabled = not free
+		if not free:
+			button.modulate = UNAVAILABLE
+		elif mate == _selected_mate:
+			button.modulate = SELECTED
+		else:
+			button.modulate = squad_colour
