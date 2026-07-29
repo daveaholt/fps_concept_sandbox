@@ -5,6 +5,8 @@ const RESPAWN_DELAY := 2.0
 const MAX_BUFFERED_COMMANDS := 16
 const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
+const SPAWN_DISPERSAL_RADIUS := 4.5
+const SPAWN_DISPERSAL_TRIES := 12
 
 enum Phase { LOBBY, PLAYING, RESULT }
 
@@ -34,6 +36,7 @@ var _starved: Dictionary = {}
 var _spawn_root: Node = null
 var _default_spawn: SpawnPoint = null
 var _player_scene: PackedScene = null
+var _spawn_tuning_cache: InfantryTuning = null
 var ballistics: BallisticsManager = null
 var _vehicles: Array = []
 
@@ -443,15 +446,99 @@ func deploy(peer_id: int, spawn_point: SpawnPoint = null) -> Node:
 	if _player_scene == null:
 		_player_scene = load(PLAYER_SCENE_PATH)
 
-	var slot := _possession.size()
-	var angle := TAU * float(slot) / float(NetCli.MAX_PEERS)
-	var offset := Vector3(cos(angle), 0.0, sin(angle)) * SPAWN_SPREAD if slot > 0 else Vector3.ZERO
-	var origin := point.global_position + offset
-
+	var origin := disperse(point.global_position)
 	var entity := _spawn_infantry(peer_id, origin, -point.global_transform.basis.z)
 	print("[server] peer %d deployed at %s %v (%d entities)"
 		% [peer_id, point.display_name, origin, _possession.size()])
 	return entity
+
+
+func disperse(base: Vector3) -> Vector3:
+	if _spawn_root == null or not (_spawn_root is Node3D):
+		return base
+	var space := (_spawn_root as Node3D).get_world_3d().direct_space_state
+	if space == null:
+		return base
+	for _attempt in SPAWN_DISPERSAL_TRIES:
+		var angle := randf() * TAU
+		var radius := sqrt(randf()) * SPAWN_DISPERSAL_RADIUS
+		var candidate := base + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+		if _spawn_is_clear(candidate, space):
+			return candidate
+	return base
+
+
+func _spawn_is_clear(feet: Vector3, space: PhysicsDirectSpaceState3D) -> bool:
+	var tuning := _spawn_tuning()
+	if tuning == null:
+		return true
+	var shape := CapsuleShape3D.new()
+	shape.radius = maxf(0.05, tuning.capsule_radius - tuning.penetration_inset)
+	shape.height = maxf(0.2, tuning.capsule_height - tuning.penetration_inset * 2.0)
+	var params := PhysicsShapeQueryParameters3D.new()
+	params.shape = shape
+	params.collision_mask = tuning.collision_mask
+	params.margin = 0.0
+	params.transform = Transform3D(Basis(),
+		feet + Vector3.UP * tuning.capsule_height * 0.5)
+	return space.intersect_shape(params, 1).is_empty()
+
+
+func _spawn_tuning() -> InfantryTuning:
+	if _player_scene == null:
+		_player_scene = load(PLAYER_SCENE_PATH)
+	if _spawn_tuning_cache == null and _player_scene != null:
+		var probe := _player_scene.instantiate()
+		_spawn_tuning_cache = probe.tuning
+		probe.free()
+	return _spawn_tuning_cache
+
+
+func squadmate_spawn_targets(peer_id: int) -> Array[int]:
+	var out: Array[int] = []
+	if phase != Phase.PLAYING:
+		return out
+	for mate in roster.squadmates(peer_id):
+		if can_spawn_on(peer_id, mate):
+			out.append(mate)
+	return out
+
+
+func can_spawn_on(peer_id: int, mate_peer: int) -> bool:
+	if mate_peer == peer_id or not roster.has_peer(peer_id):
+		return false
+	if roster.squad_of(mate_peer) != roster.squad_of(peer_id):
+		return false
+	var entity: Node = _possession.get(mate_peer)
+	if entity == null or not is_instance_valid(entity):
+		return false
+	if entity.is_in_group("vehicle"):
+		return false
+	return true
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_squad_spawn_rpc(mate_peer: int) -> void:
+	if is_active:
+		handle_squad_spawn_request(multiplayer.get_remote_sender_id(), mate_peer)
+
+
+func handle_squad_spawn_request(peer: int, mate_peer: int) -> void:
+	if not is_active:
+		return
+	if _possession.has(peer):
+		push_warning("[server] REJECTED squad spawn from peer %d: already deployed" % peer)
+		return
+	if not can_spawn_on(peer, mate_peer):
+		push_warning("[server] REJECTED squad spawn from peer %d onto peer %d"
+			% [peer, mate_peer])
+		return
+	var mate: Node3D = _possession.get(mate_peer)
+	var origin := disperse(mate.global_position)
+	var entity := _spawn_infantry(peer, origin, -mate.global_transform.basis.z)
+	if entity != null:
+		print("[server] peer %d deployed on squadmate %d at %v" % [peer, mate_peer, origin])
+	return
 
 
 func _spawn_infantry(peer_id: int, origin: Vector3, aim: Vector3) -> Node:

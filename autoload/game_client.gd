@@ -438,6 +438,33 @@ func request_spawn(spawn_point: SpawnPoint) -> void:
 		GameServer.request_spawn_rpc.rpc_id(1, spawn_point.display_name)
 
 
+func squadmate_entity(mate_peer: int) -> Node3D:
+	if _players_root == null:
+		return null
+	var node := _players_root.get_node_or_null("Player_%d" % mate_peer)
+	return node as Node3D
+
+
+func squadmate_spawn_targets() -> Array:
+	var out: Array = []
+	if phase != GameServer.Phase.PLAYING:
+		return out
+	for mate in roster.squadmates(get_peer_id()):
+		var body := squadmate_entity(mate)
+		if body != null and is_instance_valid(body) and not body.is_in_group("vehicle"):
+			out.append(mate)
+	return out
+
+
+func request_squad_spawn(mate_peer: int) -> void:
+	if mate_peer <= 0:
+		return
+	if GameServer.is_active:
+		GameServer.handle_squad_spawn_request(get_peer_id(), mate_peer)
+	elif can_rpc():
+		GameServer.request_squad_spawn_rpc.rpc_id(1, mate_peer)
+
+
 func request_forged_spawn(spawn_point: SpawnPoint) -> void:
 	if spawn_point == null:
 		return

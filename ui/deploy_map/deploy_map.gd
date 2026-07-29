@@ -6,7 +6,9 @@ const MARKER_SIZE := Vector2(150, 34)
 @export var camera_height: float = 150.0
 
 var _selected: SpawnPoint = null
+var _selected_mate: int = 0
 var _markers: Dictionary = {}
+var _mate_markers: Dictionary = {}
 
 @onready var _viewport: SubViewport = $ViewportBox/Viewport
 @onready var _camera: Camera3D = $ViewportBox/Viewport/TopDownCamera
@@ -54,6 +56,7 @@ func _build_markers() -> void:
 	for child in _marker_layer.get_children():
 		child.queue_free()
 	_markers.clear()
+	_mate_markers.clear()
 
 	for node in get_tree().get_nodes_in_group("spawn_points"):
 		if not node is SpawnPoint:
@@ -68,19 +71,40 @@ func _build_markers() -> void:
 		_marker_layer.add_child(button)
 		_markers[point] = button
 
+	for mate in GameClient.squadmate_spawn_targets():
+		var button := Button.new()
+		button.text = "▲ Player %d" % mate
+		button.custom_minimum_size = MARKER_SIZE
+		button.size = MARKER_SIZE
+		button.add_theme_color_override("font_color",
+			Roster.squad_colour(Roster.squad_of_slot(GameClient.my_slot())))
+		button.pressed.connect(_on_mate_pressed.bind(mate))
+		_marker_layer.add_child(button)
+		_mate_markers[mate] = button
+
 	if _selected == null or not _markers.has(_selected):
 		_selected = _markers.keys()[0] if not _markers.is_empty() else null
 
 
 func _on_marker_pressed(point: SpawnPoint) -> void:
 	_selected = point
+	_selected_mate = 0
+	_refresh()
+
+
+func _on_mate_pressed(mate: int) -> void:
+	_selected_mate = mate
+	_selected = null
 	_refresh()
 
 
 func _on_deploy_pressed() -> void:
-	if GameClient.is_alive() or _selected == null:
+	if GameClient.is_alive():
 		return
-	GameClient.request_spawn(_selected)
+	if _selected_mate != 0:
+		GameClient.request_squad_spawn(_selected_mate)
+	elif _selected != null:
+		GameClient.request_spawn(_selected)
 
 
 func _process(_delta: float) -> void:
@@ -103,15 +127,26 @@ func _project_markers() -> void:
 		var button: Button = _markers[point]
 		button.position = projected * scale - button.size * 0.5
 
+	for mate in _mate_markers:
+		var body := GameClient.squadmate_entity(mate)
+		var button: Button = _mate_markers[mate]
+		if body == null or not is_instance_valid(body):
+			button.visible = false
+			continue
+		button.visible = true
+		button.position = _camera.unproject_position(body.global_position) * scale 			- button.size * 0.5
+
 
 func _refresh() -> void:
 	var alive := GameClient.is_alive()
 	_header.text = "KILLED IN ACTION" if GameClient.was_killed else "DEPLOY"
 	_header.modulate = Color(1, 0.45, 0.4) if GameClient.was_killed else Color(1, 1, 1)
 
-	_deploy_button.disabled = alive or _selected == null
+	_deploy_button.disabled = alive or (_selected == null and _selected_mate == 0)
 	if alive:
 		_footer.text = "Recon — deploying while alive is disabled.  M or Esc to return."
+	elif _selected_mate != 0:
+		_footer.text = "Selected: squadmate %d   —   Deploy or press Enter" % _selected_mate
 	elif _selected != null:
 		_footer.text = "Selected: %s   —   Deploy or press Enter" % _selected.display_name
 	else:
@@ -120,3 +155,6 @@ func _refresh() -> void:
 	for point in _markers:
 		var button: Button = _markers[point]
 		button.modulate = Color(0.4, 1.0, 0.6) if point == _selected else Color(1, 1, 1)
+	for mate in _mate_markers:
+		var button: Button = _mate_markers[mate]
+		button.modulate = Color(0.4, 1.0, 0.6) if mate == _selected_mate else Color(1, 1, 1)
