@@ -27,6 +27,8 @@
 [ext_resource type="Script" path="res://entities/tank/tank.gd" id="20_nnn8o"]
 [ext_resource type="PackedScene" path="res://ui/deploy_map/deploy_map.tscn" id="22_q0vl7"]
 [ext_resource type="Script" path="res://ui/deploy_map/deploy_map.gd" id="23_2l4r6"]
+[ext_resource type="Script" path="res://ui/lobby/lobby.gd" id="25_lobby"]
+[ext_resource type="Script" path="res://ui/menu/main_menu.gd" id="26_menu"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_60cnp"]
 sky_top_color = Color(0.3, 0.46, 0.72, 1)
@@ -1508,5 +1510,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("23_2l4r6")
 
+[node name="Lobby" type="Control" parent="UI" script=ExtResource("25_lobby")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="MainMenu" type="Control" parent="UI" script=ExtResource("26_menu")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 [node name="Ballistics" type="Node3D" parent="." unique_id=2040110321]
 script = ExtResource("19_ia0wb")

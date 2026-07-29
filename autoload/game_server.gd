@@ -34,11 +34,23 @@ var _vehicles: Array = []
 
 
 func _ready() -> void:
-	if NetCli.is_tool_run():
+	if NetCli.is_tool_run() or not NetCli.has_explicit_mode():
 		return
 	var mode := NetCli.get_mode()
 	if mode == NetCli.Mode.SERVER or mode == NetCli.Mode.HOST:
-		_start(NetCli.get_port(), mode)
+		begin_hosting(NetCli.get_port(), mode)
+
+
+func begin_hosting(port: int, mode: NetCli.Mode) -> void:
+	_start(port, mode)
+	if not is_active:
+		return
+	if NetCli.has_explicit_mode():
+		phase = Phase.PLAYING
+		if mode == NetCli.Mode.HOST:
+			roster.assign(1, roster.first_free_slot())
+		phase_changed.emit(phase)
+		_broadcast_roster()
 
 
 func _start(port: int, mode: NetCli.Mode) -> void:
@@ -208,6 +220,7 @@ func team_of_peer(peer_id: int) -> int:
 
 func _broadcast_roster() -> void:
 	roster_changed.emit()
+	GameClient.apply_roster(roster.to_array(), int(phase))
 	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
 		GameClient.receive_roster.rpc(roster.to_array(), int(phase))
 
@@ -328,6 +341,15 @@ func client_ready() -> void:
 
 
 func client_ready_local(peer_id: int) -> void:
+	if phase == Phase.PLAYING and not roster.has_peer(peer_id):
+		var free := roster.first_free_slot()
+		if free >= 0:
+			roster.assign(peer_id, free)
+			print("[server] peer %d auto-assigned slot %d (%s)"
+				% [peer_id, free, Roster.squad_name(roster.squad_of(peer_id))])
+		else:
+			push_warning("[server] peer %d joined a full board" % peer_id)
+	_broadcast_roster()
 	print("[server] peer %d is ready and awaiting deployment" % peer_id)
 
 

@@ -80,6 +80,11 @@ static func get_mode() -> Mode:
 	return Mode.HOST
 
 
+static func has_explicit_mode() -> bool:
+	var args := all_args()
+	return args.has("--host") or args.has("--client") or args.has("--server")
+
+
 static func mode_name(mode: Mode) -> String:
 	match mode:
 		Mode.SERVER: return "server"

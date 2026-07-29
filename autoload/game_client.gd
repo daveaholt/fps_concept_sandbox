@@ -39,12 +39,17 @@ var _pending_auth_tick: int = 0
 
 
 func _ready() -> void:
-	if NetCli.is_tool_run():
+	if NetCli.is_tool_run() or not NetCli.has_explicit_mode():
 		return
-	match NetCli.get_mode():
+	begin(NetCli.get_mode())
+
+
+func begin(mode: NetCli.Mode, address := "", port := 0) -> void:
+	match mode:
 		NetCli.Mode.CLIENT:
 			_start_local_systems()
-			_connect_to(NetCli.get_connect_address(), NetCli.get_port())
+			_connect_to(address if address != "" else NetCli.get_connect_address(),
+				port if port > 0 else NetCli.get_port())
 		NetCli.Mode.HOST:
 			_start_local_systems()
 			is_active = true
@@ -221,10 +226,17 @@ func spawn_tracer(origin: Vector3, direction: Vector3, params_id: int, shooter_p
 
 @rpc("authority", "call_remote", "reliable")
 func receive_roster(slots: Array, new_phase: int) -> void:
+	apply_roster(slots, new_phase)
+
+
+func apply_roster(slots: Array, new_phase: int) -> void:
 	roster.from_array(slots)
+	var was := phase
 	phase = new_phase
 	my_team = roster.team_of(get_peer_id())
 	EventBus.roster_changed.emit()
+	if phase == GameServer.Phase.PLAYING and was != phase and not is_alive():
+		set_deploy_map(true)
 
 
 func request_slot(slot: int) -> void:
@@ -440,6 +452,8 @@ func on_killed() -> void:
 
 
 func set_deploy_map(open: bool) -> void:
+	if open and phase != GameServer.Phase.PLAYING:
+		return
 	if open == deploy_map_open:
 		return
 	if not open and not is_alive():
