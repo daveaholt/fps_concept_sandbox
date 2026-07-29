@@ -36,7 +36,14 @@ func _physics_process(_delta: float) -> void:
 	_poll_enter()
 
 
+func can_poll() -> bool:
+	return InputFocus.may_act(GameClient.sampler)
+
+
 func _poll_enter() -> void:
+	if not can_poll():
+		_interact_latch = false
+		return
 	var pressed := Input.is_action_pressed("interact")
 	if pressed and not _interact_latch and _target != null:
 		GameClient.request_enter(_target)
@@ -44,6 +51,9 @@ func _poll_enter() -> void:
 
 
 func _poll_exit() -> void:
+	if not can_poll():
+		_exit_latch = false
+		return
 	var pressed := Input.is_action_pressed("exit_vehicle")
 	if pressed and not _exit_latch:
 		GameClient.request_exit()
