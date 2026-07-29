@@ -57,6 +57,7 @@ fps_concept_sandbox/
 | `10_multiplayer.md` | Server authority, prediction/reconciliation, lag compensation |
 | `11_ballistics.md` | Projectile physics for all weapons — model, netcode, firing range |
 | `12_hosting.md` | Azure dedicated-server hosting for friend tests |
+| `13_teams.md` | Teams, squads, the pre-game lobby, spawning and friendly fire |
 
 ## Open questions
 
