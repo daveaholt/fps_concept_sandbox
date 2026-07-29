@@ -31,10 +31,10 @@ Plus `linear_drag` (quadratic-ish via `linear_damp`) so top speed self-limits.
 |---|---|---|
 | `mass` | 2200 kg | |
 | `max_lift` | 1.35 × m·g (29100 N) | ≈ 29 kN |
-| `collective_rate` | 0.8 /s | 0.82 s to reach a 3 m/s descent |
+| `collective_rate` | ~~0.8~~ **1.1 /s** | 0.70 s from hover to a 3 m/s descent |
 | `spool_rate` | 0.25 /s | |
-| `cyclic_torque` | 14000 N·m | Pitch & roll |
-| `pedal_torque` | 9000 N·m | 15 deg/s |
+| `cyclic_torque` | ~~14000~~ **11500 N·m** | Pitch & roll. 19 deg/s peak, 13.5° of tilt after 1 s |
+| `pedal_torque` | ~~9000~~ **7500 N·m** | 13 deg/s |
 | `attitude_damping` | 3.0 | angular_damp equivalent |
 | `auto_level` | 0.35 | 0 = manual, 1 = self-leveling drone |
 | `linear_damp` | 0.15 | |
@@ -83,3 +83,4 @@ Rotor RPM %, collective %, altitude (ray-derived AGL), speed, climb rate, "Land 
   - *Pass 2* replaced raw cyclic torque with a bounded attitude command (±38°), which decoupled rotation rate from translation authority — peak pitch rate held at 34 deg/s while speed after 3 s rose 47 → 62 km/h with thrust. Verdict: "even worse".
   - The lesson is not about the numbers. **Every one of these was measured to be better on every axis I could measure, and all of them flew worse.** Response tuning on this vehicle is not reachable from a headless rig; it needs a pilot in the seat, and the measurements are only useful for explaining *why* something feels the way it does after the fact.
 - M6: a real defect found during pass 2 and **still present in the shipped build**: `auto_level`'s restoring torque grows linearly with tilt, so it balances full cyclic at `1 / auto_level` radians — about **164°**. There is no tilt limit; holding full cyclic for 3 s settles at 110°–176° of tilt, i.e. inverted. At the shipped `cyclic_torque` of 14000 the tilt *rate* is low enough that ordinary stick inputs self-correct long before this shows up, which is why it has never been hit in play. It is a latent bug, not a theoretical one, and the fix (bounding the commanded tilt) is written and was reverted only because the feel it produced was rejected. If a tilt limit is added later, add it **without** changing the response numbers.
+- M6 tuning: after the two rejected passes above, the shipped feel came from one small pass in the directions the pilot named — pitch and yaw *slightly* less responsive, throttle *slightly* more. `cyclic_torque` −18%, `pedal_torque` −17%, `collective_rate` +38%. Measured: pitch 19 deg/s peak and 13.5° of tilt after a second, yaw 13 deg/s, and 0.70 s from hover to a 3 m/s descent (was 0.82). Recorded mostly as method: three named nudges beat a measured redesign twice over on this vehicle.
