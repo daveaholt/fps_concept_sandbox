@@ -24,6 +24,7 @@ extends RigidBody3D
 @export var chase_pitch_deg: float = -8.0
 
 var owner_peer: int = 0
+var team: int = Roster.UNALIGNED
 var health: float = 350.0
 var engine_on: bool = false
 var rotor_rpm_norm: float = 0.0
@@ -210,6 +211,10 @@ func hit_centre_y() -> float:
 
 func resolve_sector(_world_point: Vector3) -> Dictionary:
 	return {"sector": "hull", "multiplier": 1.0}
+
+
+func team_id() -> int:
+	return Roster.UNALIGNED if owner_peer == 0 else team
 
 
 func apply_damage(amount: float) -> void:

@@ -108,6 +108,11 @@ func _connect_to(address: String, port: int) -> void:
 	print("[client] connecting to %s:%d ..." % [address, port])
 
 
+var roster := Roster.new()
+var phase: int = 0
+var my_team: int = Roster.UNALIGNED
+
+
 func is_predicting() -> bool:
 	if my_entity == null or not is_instance_valid(my_entity):
 		return false
@@ -137,7 +142,8 @@ func _predict(cmd: InputCommand, delta: float) -> void:
 	entity.set_predicted_state(next, cmd.aim)
 	prediction.push(cmd.tick, cmd, next.clone())
 	if next.shots_fired != shots_before and ballistics != null:
-		ballistics.spawn(entity.muzzle_origin(), cmd.aim, next.weapon_index, get_peer_id(), 0.0)
+		ballistics.spawn(entity.muzzle_origin(), cmd.aim, next.weapon_index, get_peer_id(),
+			0.0, my_team)
 
 
 func _reconcile(delta: float) -> void:
@@ -209,7 +215,34 @@ func spawn_tracer(origin: Vector3, direction: Vector3, params_id: int, shooter_p
 		return
 	if shooter_peer == get_peer_id() and is_predicting():
 		return
-	ballistics.spawn(origin, direction, params_id, shooter_peer, 0.0)
+	ballistics.spawn(origin, direction, params_id, shooter_peer, 0.0,
+		roster.team_of(shooter_peer))
+
+
+@rpc("authority", "call_remote", "reliable")
+func receive_roster(slots: Array, new_phase: int) -> void:
+	roster.from_array(slots)
+	phase = new_phase
+	my_team = roster.team_of(get_peer_id())
+	EventBus.roster_changed.emit()
+
+
+func request_slot(slot: int) -> void:
+	if GameServer.is_active:
+		GameServer.handle_slot_request(get_peer_id(), slot)
+	elif can_rpc():
+		GameServer.request_slot.rpc_id(1, slot)
+
+
+func request_start() -> void:
+	if GameServer.is_active:
+		GameServer.handle_start_request(get_peer_id())
+	elif can_rpc():
+		GameServer.request_start.rpc_id(1)
+
+
+func my_slot() -> int:
+	return roster.slot_of(get_peer_id())
 
 
 @rpc("authority", "call_remote", "reliable")

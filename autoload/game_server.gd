@@ -6,13 +6,19 @@ const MAX_BUFFERED_COMMANDS := 16
 const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
 
+enum Phase { LOBBY, PLAYING }
+
 signal server_started(port: int)
 signal peer_joined(peer_id: int)
 signal peer_left(peer_id: int)
 signal possession_granted(peer_id: int, entity: Node)
+signal roster_changed()
+signal phase_changed(phase: int)
 
 var is_active: bool = false
 var tick: int = 0
+var phase: Phase = Phase.LOBBY
+var roster := Roster.new()
 
 var _port: int = 0
 var _possession: Dictionary = {}
@@ -78,7 +84,8 @@ func _on_entity_fired(origin: Vector3, direction: Vector3, params_id: int, peer_
 	if ballistics == null:
 		return
 	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
-	ballistics.spawn(origin, direction, params_id, peer_id, view_delay)
+	ballistics.spawn(origin, direction, params_id, peer_id, view_delay,
+		roster.team_of(peer_id))
 	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
 		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
 
@@ -115,7 +122,8 @@ func _on_vehicle_fired(origin: Vector3, direction: Vector3, params_id: int, vehi
 		return
 	var peer_id: int = vehicle.owner_peer
 	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
-	ballistics.spawn(origin, direction, params_id, peer_id, view_delay)
+	ballistics.spawn(origin, direction, params_id, peer_id, view_delay,
+		roster.team_of(peer_id))
 	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
 		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
 
@@ -141,6 +149,67 @@ func request_enter_rpc(vehicle_name: String) -> void:
 func request_exit_rpc() -> void:
 	if is_active:
 		handle_exit_request(multiplayer.get_remote_sender_id())
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_slot(slot: int) -> void:
+	if is_active:
+		handle_slot_request(multiplayer.get_remote_sender_id(), slot)
+
+
+func handle_slot_request(peer: int, slot: int) -> void:
+	if not is_active:
+		return
+	if not roster.is_valid_slot(slot):
+		push_warning("[server] REJECTED slot from peer %d: %d is not a slot" % [peer, slot])
+		return
+	if not roster.is_free(slot):
+		push_warning("[server] REJECTED slot %d for peer %d: held by peer %d"
+			% [slot, peer, roster.occupant(slot)])
+		return
+	if phase == Phase.PLAYING and roster.has_peer(peer):
+		push_warning("[server] REJECTED slot from peer %d: cannot switch mid-match" % peer)
+		return
+	if not roster.assign(peer, slot):
+		push_warning("[server] REJECTED slot %d for peer %d" % [slot, peer])
+		return
+	print("[server] peer %d took slot %d (%s, team %d)"
+		% [peer, slot, Roster.squad_name(roster.squad_of(peer)), roster.team_of(peer)])
+	_broadcast_roster()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_start() -> void:
+	if is_active:
+		handle_start_request(multiplayer.get_remote_sender_id())
+
+
+func handle_start_request(peer: int) -> void:
+	if not is_active or phase == Phase.PLAYING:
+		return
+	if not roster.has_peer(peer):
+		push_warning("[server] REJECTED start from peer %d: holds no slot" % peer)
+		return
+	fill_with_bots()
+	phase = Phase.PLAYING
+	print("[server] match started by peer %d with %d players"
+		% [peer, roster.occupied_count()])
+	phase_changed.emit(phase)
+	_broadcast_roster()
+
+
+func fill_with_bots() -> void:
+	pass
+
+
+func team_of_peer(peer_id: int) -> int:
+	return roster.team_of(peer_id)
+
+
+func _broadcast_roster() -> void:
+	roster_changed.emit()
+	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
+		GameClient.receive_roster.rpc(roster.to_array(), int(phase))
 
 
 func handle_enter_request(peer: int, vehicle: Node) -> void:
@@ -170,6 +239,7 @@ func handle_enter_request(peer: int, vehicle: Node) -> void:
 
 	_release_entity(peer)
 	vehicle.owner_peer = peer
+	vehicle.team = roster.team_of(peer)
 	_bind(peer, vehicle)
 	print("[server] peer %d entered %s" % [peer, vehicle.name])
 
@@ -189,6 +259,7 @@ func handle_exit_request(peer: int) -> void:
 	var space := (vehicle as Node3D).get_world_3d().direct_space_state
 	var exit_transform: Transform3D = vehicle.common().pick_exit_transform(space)
 	vehicle.owner_peer = 0
+	vehicle.team = Roster.UNALIGNED
 	vehicle.unpossess()
 	_possession.erase(peer)
 	_inputs.erase(peer)
@@ -237,6 +308,7 @@ func _release_peer(peer_id: int) -> void:
 	if entity != null and is_instance_valid(entity):
 		if entity.is_in_group("vehicle"):
 			entity.owner_peer = 0
+			entity.team = Roster.UNALIGNED
 			entity.unpossess()
 		else:
 			if ballistics != null:
@@ -321,6 +393,7 @@ func _spawn_infantry(peer_id: int, origin: Vector3, aim: Vector3) -> Node:
 		return null
 
 	var entity := _player_scene.instantiate()
+	entity.team = roster.team_of(peer_id)
 	entity.name = "Player_%d" % peer_id
 	entity.owner_peer = peer_id
 	entity.position = origin
@@ -437,6 +510,10 @@ func apply_dev_damage(peer_id: int, amount: float) -> void:
 	var entity: Node = _possession.get(peer_id)
 	if entity != null and is_instance_valid(entity):
 		entity.apply_damage(amount)
+
+
+static func blocks_damage(shooter_team: int, target_team: int) -> bool:
+	return Roster.blocks_damage(shooter_team, target_team)
 
 
 func entity_died(entity: Node) -> void:

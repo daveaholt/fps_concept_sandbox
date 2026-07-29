@@ -38,6 +38,7 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var camera_pitch_max_deg: float = 20.0
 
 var owner_peer: int = 0
+var team: int = Roster.UNALIGNED
 var health: float = 500.0
 
 var _common: VehicleCommon
@@ -201,6 +202,10 @@ func resolve_sector(world_point: Vector3) -> Dictionary:
 	if magnitude >= 135.0:
 		return {"sector": "rear", "multiplier": armour_rear}
 	return {"sector": "side", "multiplier": armour_side}
+
+
+func team_id() -> int:
+	return Roster.UNALIGNED if owner_peer == 0 else team
 
 
 func apply_damage(amount: float) -> void:

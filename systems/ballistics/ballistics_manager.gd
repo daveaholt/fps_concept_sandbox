@@ -51,7 +51,7 @@ func unregister_target(entity: Node) -> void:
 
 
 func spawn(origin: Vector3, direction: Vector3, params_id: int, shooter_peer: int,
-		view_delay: float) -> void:
+		view_delay: float, shooter_team: int = Roster.UNALIGNED) -> void:
 	var params := params_for(params_id)
 	if params == null or _live.size() >= MAX_PROJECTILES:
 		return
@@ -60,6 +60,7 @@ func spawn(origin: Vector3, direction: Vector3, params_id: int, shooter_peer: in
 		"prev": origin,
 		"vel": direction.normalized() * params.muzzle_velocity,
 		"params_id": params_id,
+		"team": shooter_team,
 		"shooter": shooter_peer,
 		"time": 0.0,
 		"view_delay": view_delay,
@@ -202,7 +203,7 @@ func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectilePa
 	var speed: float = (projectile["vel"] as Vector3).length()
 	var target = impact.get("target")
 
-	if target != null and is_instance_valid(target):
+	if target != null and is_instance_valid(target) and _may_damage(projectile, target):
 		var damage: float = params.energy_damage(speed) * float(impact["multiplier"])
 		hits_logged += 1
 		print("[hit] %s zone=%s x%.2f dmg=%.1f speed=%.0fm/s flight=%.3fs rewind=%.3fs"
@@ -211,12 +212,15 @@ func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectilePa
 		target.apply_damage(damage)
 
 	if params.splash_radius > 0.0:
-		_apply_splash(point, params, target)
+		_apply_splash(point, params, target, projectile)
 
 
-func _apply_splash(point: Vector3, params: ProjectileParams, direct_target) -> void:
+func _apply_splash(point: Vector3, params: ProjectileParams, direct_target,
+		projectile: Dictionary) -> void:
 	for candidate in _targets:
 		if not is_instance_valid(candidate) or candidate == direct_target:
+			continue
+		if not _may_damage(projectile, candidate):
 			continue
 		var distance: float = (candidate as Node3D).global_position.distance_to(point)
 		if distance > params.splash_radius:
@@ -229,6 +233,13 @@ func _apply_splash(point: Vector3, params: ProjectileParams, direct_target) -> v
 		print("[splash] %s at %.1fm dmg=%.1f (radius %.1fm)"
 			% [candidate.name, distance, damage, params.splash_radius])
 		candidate.apply_damage(damage)
+
+
+func _may_damage(projectile: Dictionary, target) -> bool:
+	if not target.has_method("team_id"):
+		return true
+	return not Roster.blocks_damage(int(projectile.get("team", Roster.UNALIGNED)),
+		int(target.team_id()))
 
 
 func _build_tracers() -> void:

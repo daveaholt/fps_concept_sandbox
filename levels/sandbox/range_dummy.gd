@@ -23,6 +23,10 @@ func get_history() -> PositionHistory:
 	return _history
 
 
+func team_id() -> int:
+	return Roster.UNALIGNED
+
+
 func apply_damage(amount: float) -> void:
 	_damage_taken += amount
 

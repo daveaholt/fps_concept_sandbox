@@ -36,6 +36,7 @@ var role: Role = Role.REMOTE
 var _visual_error: Vector3 = Vector3.ZERO
 var _history := PositionHistory.new()
 var _fired_seen: int = 0
+var team: int = Roster.UNALIGNED
 
 
 func _ready() -> void:
@@ -199,6 +200,10 @@ func apply_replicated_state(net_state: Dictionary) -> void:
 	state.shots_fired = net_state.get("s", state.shots_fired)
 	_aim = net_state.get("a", _aim)
 	global_position = state.position
+
+
+func team_id() -> int:
+	return team
 
 
 func apply_damage(amount: float) -> void:
