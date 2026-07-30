@@ -206,6 +206,10 @@ func team_id() -> int:
 	return team
 
 
+func is_alive() -> bool:
+	return state.health > 0.0
+
+
 func apply_damage(amount: float) -> void:
 	if not _is_server():
 		return

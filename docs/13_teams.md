@@ -25,7 +25,7 @@ An earlier draft had two phases and no end condition, on the grounds that a sand
 
 **Tickets.** Each team starts with `START_TICKETS` respawns. Every death costs the dying player's team one. The first team to reach zero loses; the other wins. This is the Battlefield model and it is chosen because it makes every death cost something and gives the deploy screen weight, without needing objectives the sandbox does not have.
 
-- Only **infantry deaths** spend tickets today. Vehicles carry health but have no destruction path yet — *vehicle respawn on wreck* is still an open M7 backlog item — so a destroyed tank costs nothing until that lands. Worth revisiting together.
+- ~~Only **infantry deaths** spend tickets today.~~ **M7: a destroyed vehicle now spends one ticket per occupant**, since everyone aboard dies with it. A full tank is therefore worth two tickets and a loaded helicopter two, which makes vehicles meaningfully expensive to lose without needing a separate vehicle-ticket pool. Revisit if that proves too punishing.
 - A death by an **unaligned** player (holding no slot, which should not happen once the lobby is enforced) spends nothing rather than crashing or guessing a side.
 - `START_TICKETS` is a tuning number, not a design one. It is deliberately low for a sandbox where two people are testing; a real 8 v 8 wants considerably more.
 

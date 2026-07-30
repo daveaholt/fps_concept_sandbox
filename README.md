@@ -72,6 +72,8 @@ In a vehicle (`E` enters, `F` / `B` exits, `C` / `A` switches seat):
 | Heli pilot | `WASD` cyclic, `Q` `E` pedals, `Space` / `Ctrl` collective, `LMB` fires rockets | Right stick · Left stick X · `RT` / `LT` collective · `RB` |
 | Either gunner | `LMB` fires, `RMB` zooms | `RT` / `LT` |
 
+Hits on a damageable target flash a marker around your reticle — white for a hit, red and wider for a kill. Vehicles degrade as they take damage (slower, worse traverse, visibly darker), are destroyed at zero hull, take their crew with them, and return after 20 seconds.
+
 The tank's gun sight draws a small hull indicator around the reticle — two track lines and a nose chevron that rotate with the hull relative to your view, since the hull itself is culled from that view.
 
 `RT` fires everywhere except the helicopter pilot's seat, where the triggers are the collective — that seat alone fires on `RB`. Gunners get their own camera, so the view turns with the gun rather than the gun sweeping across a fixed view.

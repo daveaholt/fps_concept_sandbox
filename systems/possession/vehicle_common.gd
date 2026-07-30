@@ -11,6 +11,8 @@ var _exit_point_alt: Marker3D
 var _shell_meshes: Array = []
 var _shell_hidden: bool = false
 var _shell_bounds := AABB()
+var _tinted: Array[StandardMaterial3D] = []
+var _base_albedo: Array[Color] = []
 
 
 func _ready() -> void:
@@ -20,6 +22,34 @@ func _ready() -> void:
 	if _entry_zone != null:
 		_entry_zone.add_to_group(ENTRY_GROUP)
 	_collect_shell()
+	_cache_materials()
+
+
+func _cache_materials() -> void:
+	var vehicle := get_parent()
+	if vehicle == null:
+		return
+	for mesh in vehicle.find_children("*", "MeshInstance3D", true, false):
+		var source: Material = mesh.get_active_material(0)
+		if source == null or not source is StandardMaterial3D:
+			continue
+		var copy: StandardMaterial3D = source.duplicate()
+		mesh.material_override = copy
+		_tinted.append(copy)
+		_base_albedo.append(copy.albedo_color)
+
+
+func apply_damage_tint(state: int) -> void:
+	var factor := VehicleDamage.tint(state)
+	for i in _tinted.size():
+		var base: Color = _base_albedo[i]
+		var material: StandardMaterial3D = _tinted[i]
+		material.albedo_color = Color(base.r * factor, base.g * factor, base.b * factor,
+			base.a)
+
+
+func tinted_material_count() -> int:
+	return _tinted.size()
 
 
 func _collect_shell() -> void:

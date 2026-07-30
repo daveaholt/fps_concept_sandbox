@@ -5,6 +5,7 @@ const RESPAWN_DELAY := 2.0
 const MAX_BUFFERED_COMMANDS := 16
 const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
+const VEHICLE_RESPAWN_SECONDS := 20.0
 const SPAWN_DISPERSAL_RADIUS := 4.5
 const SPAWN_DISPERSAL_TRIES := 12
 const SPAWN_DISPERSAL_FALLBACK := 1.2
@@ -40,6 +41,7 @@ var _player_scene: PackedScene = null
 var _spawn_tuning_cache: InfantryTuning = null
 var ballistics: BallisticsManager = null
 var _vehicles: Array = []
+var _wrecks: Array = []
 
 
 func _ready() -> void:
@@ -90,6 +92,8 @@ func register_level(spawn_root: Node, default_spawn: SpawnPoint,
 	ballistics = ballistics_manager
 	if ballistics != null:
 		ballistics.authoritative = is_active
+		if not ballistics.hit_confirmed.is_connected(_on_hit_confirmed):
+			ballistics.hit_confirmed.connect(_on_hit_confirmed)
 
 
 func get_peer_rtt(peer_id: int) -> float:
@@ -139,6 +143,9 @@ func register_vehicle(vehicle: Node) -> void:
 			vehicle.fired.connect(_on_vehicle_fired.bind(vehicle))
 		if vehicle.has_signal("gun_fired"):
 			vehicle.gun_fired.connect(_on_vehicle_gun_fired.bind(vehicle))
+	if vehicle.has_signal("destroyed") and not vehicle.destroyed.is_connected(
+			_on_vehicle_destroyed):
+		vehicle.destroyed.connect(_on_vehicle_destroyed)
 	if ballistics != null:
 		ballistics.register_target(vehicle)
 
@@ -695,6 +702,7 @@ func _physics_process(_delta: float) -> void:
 
 	tick += 1
 	_feed_commands()
+	_tick_wrecks(_delta)
 
 
 func _feed_commands() -> void:
@@ -759,8 +767,13 @@ static func blocks_damage(shooter_team: int, target_team: int) -> bool:
 func entity_died(entity: Node) -> void:
 	if not is_active or entity == null:
 		return
-	var peer_id: int = entity.owner_peer
-	print("[server] %s died (peer %d) — awaiting redeploy" % [entity.name, peer_id])
+	print("[server] %s died (peer %d) — awaiting redeploy" % [entity.name, entity.owner_peer])
+	_kill_occupant(entity.owner_peer)
+
+
+func _kill_occupant(peer_id: int) -> void:
+	if peer_id == 0:
+		return
 	_spend_ticket(roster.team_of(peer_id))
 	_release_peer(peer_id)
 	possession_granted.emit(peer_id, null)
@@ -768,5 +781,44 @@ func entity_died(entity: Node) -> void:
 		GameClient.on_killed()
 	elif multiplayer.get_peers().has(peer_id):
 		GameClient.on_killed.rpc_id(peer_id)
+
+
+func _on_vehicle_destroyed(vehicle: Node) -> void:
+	if not is_active or vehicle == null or vehicle.wrecked:
+		return
+	var lost: Array = vehicle.seats.occupants()
+	print("[server] %s destroyed with %d aboard" % [vehicle.name, lost.size()])
+	for peer in lost:
+		_kill_occupant(peer)
+	vehicle.enter_wreck()
+	vehicle.unpossess()
+	_refresh_vehicle_team(vehicle)
+	_wrecks.append({"vehicle": vehicle, "seconds": VEHICLE_RESPAWN_SECONDS})
+
+
+func _tick_wrecks(delta: float) -> void:
+	if _wrecks.is_empty():
+		return
+	var still_down: Array = []
+	for entry in _wrecks:
+		var vehicle: Node = entry["vehicle"]
+		if not is_instance_valid(vehicle):
+			continue
+		entry["seconds"] = float(entry["seconds"]) - delta
+		if float(entry["seconds"]) > 0.0:
+			still_down.append(entry)
+			continue
+		vehicle.revive()
+		print("[server] %s back in service" % vehicle.name)
+	_wrecks = still_down
+
+
+func _on_hit_confirmed(shooter_peer: int, damage: float, killed: bool) -> void:
+	if shooter_peer == 0:
+		return
+	if shooter_peer == 1:
+		GameClient.on_hit_confirmed(damage, killed)
+	elif multiplayer.multiplayer_peer != null and multiplayer.get_peers().has(shooter_peer):
+		GameClient.on_hit_confirmed.rpc_id(shooter_peer, damage, killed)
 
 

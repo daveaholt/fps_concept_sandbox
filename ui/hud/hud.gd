@@ -15,6 +15,7 @@ var _ticket_label: Label
 var _result_label: Label
 var _controls_label: Label
 var _hull_indicator: HullIndicator
+var _hit_marker: HitMarker
 
 
 func _ready() -> void:
@@ -50,6 +51,11 @@ func _ready() -> void:
 	_hull_indicator.visible = false
 	add_child(_hull_indicator)
 
+	_hit_marker = HitMarker.new()
+	_hit_marker.name = "HitMarker"
+	add_child(_hit_marker)
+
+	EventBus.hit_confirmed.connect(_on_hit_confirmed)
 	EventBus.roster_changed.connect(_refresh_squad)
 	_refresh_squad()
 	EventBus.possession_changed.connect(_on_possession_changed)
@@ -115,6 +121,7 @@ func _process(_delta: float) -> void:
 		return
 
 	visible = true
+	_hit_marker.global_position = _crosshair.global_position
 	_hull_indicator.visible = false
 	if _entity.is_in_group("helicopter"):
 		_helicopter_panel()
@@ -139,12 +146,24 @@ func _refresh_controls() -> void:
 	_controls_label.text = "   ·   ".join(hints)
 
 
+func _on_hit_confirmed(_damage: float, killed: bool) -> void:
+	_hit_marker.flash(killed)
+
+
 func _refresh_hull_indicator() -> void:
 	if not _entity.has_method("using_first_person") or not _entity.using_first_person():
 		return
 	_hull_indicator.visible = true
 	_hull_indicator.global_position = _crosshair.global_position
 	_hull_indicator.set_hull_angle(_entity.turret_angles().x)
+
+
+func _condition() -> String:
+	if not _entity.has_method("health_fraction"):
+		return ""
+	var state: String = VehicleDamage.label(_entity.damage_state())
+	return "HULL %d%%%s" % [roundi(_entity.health_fraction() * 100.0),
+		"  " + state if state != "" else ""]
 
 
 func _seat() -> int:
@@ -202,9 +221,9 @@ func _infantry_panel() -> void:
 
 
 func _helicopter_panel() -> void:
-	_health_label.text = "%s   %.0f km/h   %.0f m AGL   %+.1f m/s" % [
+	_health_label.text = "%s   %.0f km/h   %.0f m AGL   %+.1f m/s   %s" % [
 		_entity.get_display_name(), _entity.speed_kmh(),
-		_entity.altitude_agl(), _entity.climb_rate()]
+		_entity.altitude_agl(), _entity.climb_rate(), _condition()]
 
 	if _seat() > Seats.DRIVER:
 		_health_label.text = "%s   GUNNER   %.0f m AGL" % [
@@ -236,7 +255,8 @@ func _helicopter_panel() -> void:
 
 
 func _vehicle_panel() -> void:
-	_health_label.text = "%s   %.0f km/h" % [_entity.get_display_name(), _entity.speed_kmh()]
+	_health_label.text = "%s   %.0f km/h   %s" % [_entity.get_display_name(),
+		_entity.speed_kmh(), _condition()]
 
 	if _seat() > Seats.DRIVER:
 		_weapon_label.text = "MG — %s   heat %.0f%%%s" % [

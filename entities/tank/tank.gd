@@ -5,6 +5,7 @@ const GUNNER_SEAT := 1
 
 signal fired(origin: Vector3, direction: Vector3, params_id: int)
 signal gun_fired(origin: Vector3, direction: Vector3, params_id: int)
+signal destroyed(vehicle: Node)
 
 @export var max_engine_force: float = 14000.0
 @export var pivot_force: float = 10000.0
@@ -51,7 +52,11 @@ signal gun_fired(origin: Vector3, direction: Vector3, params_id: int)
 
 var owner_peer: int = 0
 var team: int = Roster.UNALIGNED
+@export var max_health: float = 500.0
 var health: float = 500.0
+var wrecked: bool = false
+var _damage_state: int = VehicleDamage.State.HEALTHY
+var _spawn_transform := Transform3D()
 
 var _common: VehicleCommon
 var _turret_yaw: Node3D
@@ -99,6 +104,8 @@ func _ready() -> void:
 		_pending.append([])
 		_last_command.append(InputCommand.new())
 
+	health = max_health
+	_spawn_transform = global_transform
 	_init_gunner()
 	add_to_group("controllable")
 	add_to_group("vehicle")
@@ -296,7 +303,7 @@ func seat_of(peer_id: int) -> int:
 
 
 func has_free_seat() -> bool:
-	return seats.first_free() >= 0
+	return not wrecked and seats.first_free() >= 0
 
 
 func take_seat(peer_id: int, seat: int = -1) -> int:
@@ -335,6 +342,8 @@ func get_net_state() -> Dictionary:
 		"gh": _gun_heat,
 		"v": linear_velocity,
 		"o": owner_peer,
+		"hp": health,
+		"wk": wrecked,
 		"st": seats.to_array(),
 	}
 
@@ -353,6 +362,9 @@ func apply_replicated_state(net_state: Dictionary) -> void:
 		_apply_gun()
 	_gun_heat = net_state.get("gh", _gun_heat)
 	owner_peer = net_state.get("o", owner_peer)
+	health = net_state.get("hp", health)
+	wrecked = net_state.get("wk", wrecked)
+	refresh_damage_state()
 	var wire: Array = net_state.get("st", [])
 	if not wire.is_empty():
 		seats.clear()
@@ -397,9 +409,59 @@ func team_id() -> int:
 
 
 func apply_damage(amount: float) -> void:
-	if not _server_authority:
+	if not _server_authority or wrecked:
 		return
 	health = maxf(0.0, health - amount)
+	refresh_damage_state()
+	if health <= 0.0:
+		destroyed.emit(self)
+
+
+func is_alive() -> bool:
+	return not wrecked and health > 0.0
+
+
+func health_fraction() -> float:
+	return clampf(health / maxf(max_health, 0.001), 0.0, 1.0)
+
+
+func damage_state() -> int:
+	return _damage_state
+
+
+func traverse_rate() -> float:
+	return VehicleDamage.traverse(_damage_state)
+
+
+func mobility() -> float:
+	return VehicleDamage.mobility(_damage_state)
+
+
+func refresh_damage_state() -> void:
+	var next: int = VehicleDamage.State.DESTROYED if wrecked 		else VehicleDamage.state_for(health_fraction())
+	if next == _damage_state:
+		return
+	_damage_state = next
+	if _common != null:
+		_common.apply_damage_tint(_damage_state)
+
+
+func enter_wreck() -> void:
+	wrecked = true
+	health = 0.0
+	refresh_damage_state()
+	for peer in seats.occupants():
+		seats.release(peer)
+	owner_peer = 0
+
+
+func revive() -> void:
+	wrecked = false
+	health = max_health
+	refresh_damage_state()
+	global_transform = _spawn_transform
+	linear_velocity = Vector3.ZERO
+	angular_velocity = Vector3.ZERO
 
 
 func _next_command(seat: int = Seats.DRIVER) -> InputCommand:
@@ -532,12 +594,12 @@ func _drive(throttle: float, steer_input: float, braking: bool, delta: float) ->
 	var left := 0.0
 	var right := 0.0
 	if pivoting:
-		left = steer_input * pivot_force
-		right = -steer_input * pivot_force
+		left = steer_input * pivot_force * mobility()
+		right = -steer_input * pivot_force * mobility()
 	else:
 		var inside := steer_input * authority * travel
-		left = -(throttle + inside) * max_engine_force * governor
-		right = -(throttle - inside) * max_engine_force * governor
+		left = -(throttle + inside) * max_engine_force * governor * mobility()
+		right = -(throttle - inside) * max_engine_force * governor * mobility()
 
 	_apply_side(_left_wheels, left)
 	_apply_side(_right_wheels, right)
@@ -598,13 +660,13 @@ func _step_turret(delta: float, driving: bool) -> void:
 
 	var hull_yaw := global_transform.basis.get_euler().y
 	var want_yaw := wrapf(atan2(-flat.x, -flat.z) - hull_yaw, -PI, PI)
-	var yaw_step := deg_to_rad(turret_yaw_speed_deg) * delta
+	var yaw_step := deg_to_rad(turret_yaw_speed_deg) * traverse_rate() * delta
 	_turret_yaw_angle = wrapf(_turret_yaw_angle
 		+ clampf(wrapf(want_yaw - _turret_yaw_angle, -PI, PI), -yaw_step, yaw_step), -PI, PI)
 
 	var want_pitch := clampf(asin(clampf(_aim.normalized().y, -1.0, 1.0)),
 		deg_to_rad(cannon_pitch_min_deg), deg_to_rad(cannon_pitch_max_deg))
-	var pitch_step := deg_to_rad(cannon_pitch_speed_deg) * delta
+	var pitch_step := deg_to_rad(cannon_pitch_speed_deg) * traverse_rate() * delta
 	_cannon_pitch_angle += clampf(want_pitch - _cannon_pitch_angle, -pitch_step, pitch_step)
 
 

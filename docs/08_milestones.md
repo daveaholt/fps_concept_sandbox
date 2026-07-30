@@ -54,9 +54,9 @@ Implement the embedded-key auth handshake per 10 (nonce challenge, HMAC reply, 2
 
 ## M7 — Sandbox polish pass (open-ended)
 
-Done: passenger seats (**unlocked squad-spawn into a free seat — see 13**) · helicopter armament (chin minigun + rocket pods, gunner-operated) · vehicle icons + *squad/team* players on deploy map · per-seat gunner camera and projected weapon reticle · **tank cockpit cam — the "first person tank" ask, closed**.
+Done: passenger seats (**unlocked squad-spawn into a free seat — see 13**) · helicopter armament (chin minigun + rocket pods, gunner-operated) · vehicle icons + *squad/team* players on deploy map · per-seat gunner camera and projected weapon reticle · **tank cockpit cam — the "first person tank" ask, closed** · vehicle damage states, destruction and respawn · hit confirmation.
 
-Backlog, any order: exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
+Backlog, any order: exit-momentum inheritance · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
 
 ### Added after M6
 
@@ -64,7 +64,7 @@ Requested by the repo owner. Listed separately from the line above because each 
 
 - **Infantry squat / crouch.** Not specced anywhere today — 03 has no stance concept. The catch is that it lands inside `InfantrySim.simulate`, the pure step function the server and the predicting client both run, so it has to be deterministic and replay-safe or reconciliation breaks. It also changes the capsule height, which moves the hit-zone geometry in 11 and everything the lag-compensation history replays against. Cheap to *feel*, not cheap to get right.
 - **ADS / zoom for all weapons.** No action is bound for it at all yet. Touches 02 (a binding on every device — LB was earmarked in the M6 heli scheme), 03 (infantry weapon handling), and both vehicles. Decide early whether zoom is a pure camera FOV change or also alters spread/recoil, because the second makes it part of the sim rather than the view.
-- **Vehicle damage states.** Tank and heli already carry a plain `health` float and nothing reads it but death. This is the staged version — visual and functional degradation as it drops. Pairs naturally with *vehicle respawn on wreck*, already on the list above.
+- ~~**Vehicle damage states.**~~ **Done.** Landed together with destruction and respawn, because the three are the same feature: a health bar with no zero is not a damage state, and a wreck that never returns empties the sandbox after two kills.
 - **Vehicle impact damage.** Collision and hard-landing damage. Interacts with 06's landing criterion (< 4 m/s on skids, no bounce-flip) — that number becomes the boundary between a landing and a crash — and with ramming in 05.
 - **Minimap.** **Inherits 07's squad/team rule verbatim.** 07 already warns that the moment players become legible on *any* map view, it turns the wallhack that 10 lists as an accepted gap into a deliberate feature. There is still no team or squad concept in the sandbox, so a minimap either ships with no player markers at all, or waits for teams. Do not ship an all-players version intending to filter it later.
 - ~~**Squad / team management**~~ — **done**, specced and recorded in `13_teams.md`. Delivered: roster and slots, friendly fire off, main menu and pre-game lobby, tickets and match end, squad spawn, randomised dispersal, and the squad-filtered deploy markers 07 had deferred since M4. Spawning into a free vehicle seat is the one specced piece still waiting, on passenger seats.

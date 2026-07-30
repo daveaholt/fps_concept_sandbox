@@ -527,6 +527,11 @@ func is_alive() -> bool:
 	return my_entity != null and is_instance_valid(my_entity)
 
 
+@rpc("authority", "call_remote", "unreliable")
+func on_hit_confirmed(damage: float, killed: bool) -> void:
+	EventBus.hit_confirmed.emit(damage, killed)
+
+
 @rpc("authority", "call_remote", "reliable")
 func on_killed() -> void:
 	was_killed = true

@@ -1,6 +1,8 @@
 class_name BallisticsManager
 extends Node3D
 
+signal hit_confirmed(shooter_peer: int, damage: float, killed: bool)
+
 const MAX_PROJECTILES := 512
 const WORLD_MASK := 1
 const COMPENSATION_DECAY_SECONDS := 0.3
@@ -211,7 +213,10 @@ func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectilePa
 		print("[hit] %s zone=%s x%.2f dmg=%.1f speed=%.0fm/s flight=%.3fs rewind=%.3fs"
 			% [target.name, impact["zone"], impact["multiplier"], damage, speed,
 				projectile["time"], _rewind_offset(projectile)])
+		var was_alive := _target_alive(target)
 		target.apply_damage(damage)
+		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage,
+			was_alive and not _target_alive(target))
 
 	if params.splash_radius > 0.0:
 		_apply_splash(point, params, target, projectile)
@@ -234,7 +239,18 @@ func _apply_splash(point: Vector3, params: ProjectileParams, direct_target,
 		hits_logged += 1
 		print("[splash] %s at %.1fm dmg=%.1f (radius %.1fm)"
 			% [candidate.name, distance, damage, params.splash_radius])
+		var was_alive := _target_alive(candidate)
 		candidate.apply_damage(damage)
+		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage,
+			was_alive and not _target_alive(candidate))
+
+
+func _target_alive(target) -> bool:
+	if target == null or not is_instance_valid(target):
+		return false
+	if not target.has_method("is_alive"):
+		return true
+	return target.is_alive()
 
 
 func _may_damage(projectile: Dictionary, target) -> bool:
