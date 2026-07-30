@@ -523,6 +523,7 @@ func _process(delta: float) -> void:
 	if _predict_gun():
 		slew_gun(_gunner_view_aim, delta)
 	_update_cameras(delta)
+	_refresh_shell()
 
 
 func _predict_gun() -> bool:
@@ -544,8 +545,7 @@ func _activate_camera() -> void:
 		_chase_camera.current = _possessed and not gunning and _chase_active
 	if _gunner_camera != null:
 		_gunner_camera.current = gunning
-	if _common != null:
-		_common.set_shell_hidden(_possessed and (gunning or not _chase_active))
+	_refresh_shell()
 
 
 func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
@@ -554,6 +554,18 @@ func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
 		_activate_camera()
 	if seat == GUNNER_SEAT:
 		_gunner_view_aim = aim
+
+
+func _refresh_shell() -> void:
+	if _common == null:
+		return
+	var camera: Camera3D = _cockpit_camera
+	if _local_seat == GUNNER_SEAT:
+		camera = _gunner_camera
+	elif _chase_active:
+		camera = _chase_camera
+	_common.set_shell_hidden(_possessed and camera != null
+		and _common.encloses(camera.global_position))
 
 
 func gunner_eye() -> Vector3:

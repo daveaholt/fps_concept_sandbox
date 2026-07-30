@@ -10,6 +10,7 @@ var _exit_point: Marker3D
 var _exit_point_alt: Marker3D
 var _shell_meshes: Array = []
 var _shell_hidden: bool = false
+var _shell_bounds := AABB()
 
 
 func _ready() -> void:
@@ -23,12 +24,32 @@ func _ready() -> void:
 
 func _collect_shell() -> void:
 	_shell_meshes = []
-	var vehicle := get_parent()
+	var vehicle := get_parent() as Node3D
 	if vehicle == null:
 		return
+	var inverse: Transform3D = vehicle.global_transform.affine_inverse()
 	for node in vehicle.find_children("*", "VisualInstance3D", true, false):
-		if node.is_in_group(RenderLayers.SHELL_GROUP):
-			_shell_meshes.append(node)
+		if not node.is_in_group(RenderLayers.SHELL_GROUP):
+			continue
+		_shell_meshes.append(node)
+		var mesh: Mesh = node.mesh
+		if mesh == null:
+			continue
+		var local: AABB = inverse * node.global_transform * mesh.get_aabb()
+		_shell_bounds = local if _shell_meshes.size() == 1 else _shell_bounds.merge(local)
+
+
+func encloses(global_point: Vector3) -> bool:
+	if _shell_meshes.is_empty():
+		return false
+	var vehicle := get_parent() as Node3D
+	if vehicle == null:
+		return false
+	return _shell_bounds.has_point(vehicle.to_local(global_point))
+
+
+func shell_bounds() -> AABB:
+	return _shell_bounds
 
 
 func set_shell_hidden(hidden: bool) -> void:

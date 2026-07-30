@@ -249,8 +249,7 @@ func _activate_cameras() -> void:
 		_camera.current = _possessed and not gunning
 	if _gunner_camera != null:
 		_gunner_camera.current = gunning
-	if _common != null:
-		_common.set_shell_hidden(gunning)
+	_refresh_shell()
 
 
 func is_possessed() -> bool:
@@ -440,6 +439,7 @@ func _process(delta: float) -> void:
 	if _predict_gun():
 		slew_gun(_gunner_view_aim, delta)
 	_update_camera()
+	_refresh_shell()
 
 
 func _predict_gun() -> bool:
@@ -455,6 +455,14 @@ func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
 		return
 	if _predict_turret:
 		_aim = aim
+
+
+func _refresh_shell() -> void:
+	if _common == null:
+		return
+	var camera: Camera3D = _gunner_camera if _local_seat == GUNNER_SEAT else _camera
+	_common.set_shell_hidden(_possessed and camera != null
+		and _common.encloses(camera.global_position))
 
 
 func gunner_eye() -> Vector3:
