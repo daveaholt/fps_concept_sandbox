@@ -37,6 +37,7 @@ Every gameplay action carries **both** a keyboard/mouse binding and an Xbox-layo
 | `zoom` | RMB | LT | |
 | `brake` | Space | LB | Reuses jump's key; separate action name |
 | *turret* | Mouse | Right stick | Turret yaw + cannon pitch follow camera |
+| `toggle_camera` | V | R3 | Chase ↔ gun sight (first person) |
 | `switch_seat` | C | A | Driver ↔ machine gunner |
 | `exit_vehicle` | F | B | |
 

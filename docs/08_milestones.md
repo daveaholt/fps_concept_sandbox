@@ -54,9 +54,9 @@ Implement the embedded-key auth handshake per 10 (nonce challenge, HMAC reply, 2
 
 ## M7 — Sandbox polish pass (open-ended)
 
-Done: passenger seats (**unlocked squad-spawn into a free seat — see 13**) · helicopter armament (chin minigun + rocket pods, gunner-operated) · vehicle icons + *squad/team* players on deploy map · per-seat gunner camera and projected weapon reticle.
+Done: passenger seats (**unlocked squad-spawn into a free seat — see 13**) · helicopter armament (chin minigun + rocket pods, gunner-operated) · vehicle icons + *squad/team* players on deploy map · per-seat gunner camera and projected weapon reticle · **tank cockpit cam — the "first person tank" ask, closed**.
 
-Backlog, any order: exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · **tank cockpit cam — the "first person tank" ask, still open** · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
+Backlog, any order: exit-momentum inheritance · vehicle respawn on wreck · interest management experiment (the wallhack gap in 10) · snapshot encoding slimming if bandwidth measured ugly · heli artificial horizon · tread shader · a jeep (tests how much 04/05 generalize) · sounds · first-person viewmodel with tracers leaving the weapon rather than the eyeline.
 
 ### Added after M6
 

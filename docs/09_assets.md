@@ -32,7 +32,7 @@ Rules that make the swap trivial:
 | Entity | Hooks a real model must provide (as child node names/attachment) |
 |---|---|
 | Player | `Body`, `Head`, `WeaponProxy` (rigid placeholder soldier seen by remote players, 03; owner's camera culls it by render layer) |
-| Tank | `Hull`, `Turret`, `Barrel` sub-visuals; optional `WheelL1..R3` for wheel spin |
+| Tank | `Hull`, `Turret`, `Barrel` sub-visuals; optional `WheelL1..R3` for wheel spin. Eye markers: `GunnerEye` on the body, `DriverEye` on `TurretYaw/CannonPitch` |
 | Helicopter | `Fuselage`, `MainRotor`, `TailRotor` (rotors spun by script via these names — the one allowed name-based lookup, resolved once in `_ready` with a null-safe fallback) |
 | Terrain/props | free-form; not swap-structured (graybox is rebuilt, not reskinned) |
 

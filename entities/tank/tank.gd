@@ -85,6 +85,8 @@ var _gun_heat: float = 0.0
 var _gunner_rig: Node3D
 var _gunner_camera: Camera3D
 var _gunner_eye: Marker3D
+var _cockpit_camera: Camera3D
+var _first_person: bool = false
 var _gunner_view_aim: Vector3 = Vector3.FORWARD
 var _local_seat: int = -1
 
@@ -108,6 +110,7 @@ func _ready() -> void:
 	_muzzle = get_node_or_null("TurretYaw/CannonPitch/Muzzle")
 	_spring = get_node_or_null("SeatCameraRig/SpringArm3D")
 	_camera = get_node_or_null("SeatCameraRig/SpringArm3D/Camera3D")
+	_cockpit_camera = get_node_or_null("TurretYaw/CannonPitch/DriverEye/Camera3D")
 	_gunner_eye = get_node_or_null("GunnerEye")
 	_gunner_rig = get_node_or_null("GunnerRig")
 	_gunner_camera = get_node_or_null("GunnerRig/Camera3D")
@@ -115,6 +118,8 @@ func _ready() -> void:
 		_gunner_rig.top_level = true
 	if _gunner_camera != null:
 		_gunner_camera.current = false
+	if _cockpit_camera != null:
+		_cockpit_camera.current = false
 	if _spring != null:
 		_spring.spring_length = camera_spring_length
 		_spring.top_level = true
@@ -245,11 +250,23 @@ func unpossess() -> void:
 
 func _activate_cameras() -> void:
 	var gunning := _possessed and _local_seat == GUNNER_SEAT
+	var cockpit := _possessed and not gunning and _first_person
 	if _camera != null:
-		_camera.current = _possessed and not gunning
+		_camera.current = _possessed and not gunning and not cockpit
+	if _cockpit_camera != null:
+		_cockpit_camera.current = cockpit
 	if _gunner_camera != null:
 		_gunner_camera.current = gunning
 	_refresh_shell()
+
+
+func toggle_camera() -> void:
+	_first_person = not _first_person
+	_activate_cameras()
+
+
+func using_first_person() -> bool:
+	return _first_person
 
 
 func is_possessed() -> bool:
@@ -460,7 +477,11 @@ func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
 func _refresh_shell() -> void:
 	if _common == null:
 		return
-	var camera: Camera3D = _gunner_camera if _local_seat == GUNNER_SEAT else _camera
+	var camera: Camera3D = _camera
+	if _local_seat == GUNNER_SEAT:
+		camera = _gunner_camera
+	elif _first_person:
+		camera = _cockpit_camera
 	_common.set_shell_hidden(_possessed and camera != null
 		and _common.encloses(camera.global_position))
 

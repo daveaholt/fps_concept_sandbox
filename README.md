@@ -68,7 +68,7 @@ In a vehicle (`E` enters, `F` / `B` exits, `C` / `A` switches seat):
 
 | | Keyboard / mouse | Gamepad |
 |---|---|---|
-| Tank driver | `WASD` drives, `Space` brakes, `LMB` fires the cannon, `RMB` zooms | Left stick · `LB` · `RT` / `LT` |
+| Tank driver | `WASD` drives, `Space` brakes, `LMB` fires the cannon, `RMB` zooms, `V` toggles the gun sight | Left stick · `LB` · `RT` / `LT` · `R3` |
 | Heli pilot | `WASD` cyclic, `Q` `E` pedals, `Space` / `Ctrl` collective, `LMB` fires rockets | Right stick · Left stick X · `RT` / `LT` collective · `RB` |
 | Either gunner | `LMB` fires, `RMB` zooms | `RT` / `LT` |
 

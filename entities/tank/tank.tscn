@@ -144,6 +144,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, -0.2)
 [node name="Muzzle" type="Marker3D" parent="TurretYaw/CannonPitch" unique_id=1241629848]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.6)
 
+[node name="DriverEye" type="Marker3D" parent="TurretYaw/CannonPitch"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.38, -1.15)
+
+[node name="Camera3D" type="Camera3D" parent="TurretYaw/CannonPitch/DriverEye"]
+cull_mask = 1048573
+far = 2000.0
+
 [node name="Visual" type="Node3D" parent="TurretYaw/CannonPitch" unique_id=1156460967]
 
 [node name="Barrel" type="MeshInstance3D" parent="TurretYaw/CannonPitch/Visual" unique_id=1465606855]
