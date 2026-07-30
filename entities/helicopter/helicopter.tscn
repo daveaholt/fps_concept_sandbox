@@ -29,7 +29,8 @@ material = SubResource("StandardMaterial3D_tail")
 size = Vector3(0.42, 0.5, 3.6)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glass"]
-albedo_color = Color(0.35, 0.45, 0.5, 1)
+transparency = 1
+albedo_color = Color(0.35, 0.45, 0.5, 0.28)
 roughness = 0.35
 
 [sub_resource type="BoxMesh" id="BoxMesh_glass"]
@@ -95,15 +96,15 @@ shape = SubResource("BoxShape3D_skid")
 
 [node name="Visual" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="Visual"]
+[node name="Body" type="MeshInstance3D" parent="Visual" groups=["vehicle_shell"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.2)
 mesh = SubResource("BoxMesh_body")
 
-[node name="Canopy" type="MeshInstance3D" parent="Visual"]
+[node name="Canopy" type="MeshInstance3D" parent="Visual" groups=["vehicle_shell"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, -3)
 mesh = SubResource("BoxMesh_glass")
 
-[node name="Tail" type="MeshInstance3D" parent="Visual"]
+[node name="Tail" type="MeshInstance3D" parent="Visual" groups=["vehicle_shell"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 4.6)
 mesh = SubResource("BoxMesh_tail")
 
@@ -182,6 +183,9 @@ mesh = SubResource("BoxMesh_pod")
 [node name="PodRVisual" type="MeshInstance3D" parent="Visual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.2, -1.2)
 mesh = SubResource("BoxMesh_pod")
+
+[node name="GunnerEye" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, -3.05)
 
 [node name="GunnerRig" type="Node3D" parent="."]
 

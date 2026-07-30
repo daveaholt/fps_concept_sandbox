@@ -46,7 +46,6 @@ signal gun_fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var recoil_impulse: float = 9000.0
 @export var camera_pivot_height: float = 1.85
 @export var camera_spring_length: float = 8.0
-@export var gunner_eye_offset := Vector3(0.0, 2.0, 0.25)
 @export var camera_pitch_min_deg: float = -8.0
 @export var camera_pitch_max_deg: float = 20.0
 
@@ -85,6 +84,7 @@ var _gun_cooldown: float = 0.0
 var _gun_heat: float = 0.0
 var _gunner_rig: Node3D
 var _gunner_camera: Camera3D
+var _gunner_eye: Marker3D
 var _gunner_view_aim: Vector3 = Vector3.FORWARD
 var _local_seat: int = -1
 
@@ -108,6 +108,7 @@ func _ready() -> void:
 	_muzzle = get_node_or_null("TurretYaw/CannonPitch/Muzzle")
 	_spring = get_node_or_null("SeatCameraRig/SpringArm3D")
 	_camera = get_node_or_null("SeatCameraRig/SpringArm3D/Camera3D")
+	_gunner_eye = get_node_or_null("GunnerEye")
 	_gunner_rig = get_node_or_null("GunnerRig")
 	_gunner_camera = get_node_or_null("GunnerRig/Camera3D")
 	if _gunner_rig != null:
@@ -248,6 +249,8 @@ func _activate_cameras() -> void:
 		_camera.current = _possessed and not gunning
 	if _gunner_camera != null:
 		_gunner_camera.current = gunning
+	if _common != null:
+		_common.set_shell_hidden(gunning)
 
 
 func is_possessed() -> bool:
@@ -454,6 +457,10 @@ func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
 		_aim = aim
 
 
+func gunner_eye() -> Vector3:
+	return _gunner_eye.global_position if _gunner_eye != null else global_position
+
+
 func _update_gunner_camera() -> void:
 	if _gunner_rig == null:
 		return
@@ -462,7 +469,7 @@ func _update_gunner_camera() -> void:
 		flat = Vector3.FORWARD
 	var yaw := atan2(-flat.x, -flat.z)
 	var pitch := asin(clampf(_gunner_view_aim.normalized().y, -1.0, 1.0))
-	_gunner_rig.global_position = to_global(gunner_eye_offset)
+	_gunner_rig.global_position = gunner_eye()
 	_gunner_rig.global_rotation = Vector3(pitch, yaw, 0.0)
 
 

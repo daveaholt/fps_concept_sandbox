@@ -8,6 +8,8 @@ const ENTRY_GROUP := "vehicle_entry"
 var _entry_zone: Area3D
 var _exit_point: Marker3D
 var _exit_point_alt: Marker3D
+var _shell_meshes: Array = []
+var _shell_hidden: bool = false
 
 
 func _ready() -> void:
@@ -16,6 +18,34 @@ func _ready() -> void:
 	_exit_point_alt = get_node_or_null("ExitPointAlt")
 	if _entry_zone != null:
 		_entry_zone.add_to_group(ENTRY_GROUP)
+	_collect_shell()
+
+
+func _collect_shell() -> void:
+	_shell_meshes = []
+	var vehicle := get_parent()
+	if vehicle == null:
+		return
+	for node in vehicle.find_children("*", "VisualInstance3D", true, false):
+		if node.is_in_group(RenderLayers.SHELL_GROUP):
+			_shell_meshes.append(node)
+
+
+func set_shell_hidden(hidden: bool) -> void:
+	if hidden == _shell_hidden:
+		return
+	_shell_hidden = hidden
+	var bits := RenderLayers.OWNER_HIDDEN if hidden else RenderLayers.WORLD_VISIBLE
+	for node in _shell_meshes:
+		node.layers = bits
+
+
+func shell_mesh_count() -> int:
+	return _shell_meshes.size()
+
+
+func shell_hidden() -> bool:
+	return _shell_hidden
 
 
 func entry_zone() -> Area3D:

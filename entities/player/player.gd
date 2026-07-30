@@ -9,8 +9,8 @@ signal fired(origin: Vector3, direction: Vector3, params_id: int)
 @export var error_smoothing_tau: float = 0.035
 @export var hit_zones: HitZones
 
-const WORLD_VISIBLE_LAYER := 1
-const OWN_BODY_LAYER := 2
+const WORLD_VISIBLE_LAYER := RenderLayers.WORLD_VISIBLE
+const OWN_BODY_LAYER := RenderLayers.OWNER_HIDDEN
 const MAX_SMOOTHED_ERROR := 2.0
 
 enum Role { SERVER, PREDICTED, REMOTE }

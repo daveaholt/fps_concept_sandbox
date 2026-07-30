@@ -38,7 +38,6 @@ const GUNNER_SEAT := 1
 
 @export var chase_spring_length: float = 10.0
 @export var chase_pivot_height: float = 2.2
-@export var gunner_eye_offset := Vector3(0.0, 1.45, -2.3)
 @export var chase_lag: float = 6.0
 @export var chase_pitch_deg: float = -8.0
 
@@ -59,6 +58,7 @@ var _chase_camera: Camera3D
 var _chase_yaw: float = 0.0
 var _gunner_rig: Node3D
 var _gunner_camera: Camera3D
+var _gunner_eye: Marker3D
 var _gunner_view_aim: Vector3 = Vector3.FORWARD
 var _local_seat: int = -1
 
@@ -104,6 +104,7 @@ func _ready() -> void:
 	_chase_rig = get_node_or_null("ChaseRig")
 	_chase_spring = get_node_or_null("ChaseRig/SpringArm3D")
 	_chase_camera = get_node_or_null("ChaseRig/SpringArm3D/Camera3D")
+	_gunner_eye = get_node_or_null("GunnerEye")
 	_gunner_rig = get_node_or_null("GunnerRig")
 	_gunner_camera = get_node_or_null("GunnerRig/Camera3D")
 	if _gunner_rig != null:
@@ -543,6 +544,8 @@ func _activate_camera() -> void:
 		_chase_camera.current = _possessed and not gunning and _chase_active
 	if _gunner_camera != null:
 		_gunner_camera.current = gunning
+	if _common != null:
+		_common.set_shell_hidden(_possessed and (gunning or not _chase_active))
 
 
 func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
@@ -553,6 +556,10 @@ func set_local_aim(aim: Vector3, seat: int = Seats.DRIVER) -> void:
 		_gunner_view_aim = aim
 
 
+func gunner_eye() -> Vector3:
+	return _gunner_eye.global_position if _gunner_eye != null else global_position
+
+
 func _update_gunner_camera() -> void:
 	if _gunner_rig == null:
 		return
@@ -561,7 +568,7 @@ func _update_gunner_camera() -> void:
 		flat = Vector3.FORWARD
 	var yaw := atan2(-flat.x, -flat.z)
 	var pitch := asin(clampf(_gunner_view_aim.normalized().y, -1.0, 1.0))
-	_gunner_rig.global_position = to_global(gunner_eye_offset)
+	_gunner_rig.global_position = gunner_eye()
 	_gunner_rig.global_rotation = Vector3(pitch, yaw, 0.0)
 
 
