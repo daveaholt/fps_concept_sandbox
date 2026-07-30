@@ -14,6 +14,7 @@ var _squad_label: Label
 var _ticket_label: Label
 var _result_label: Label
 var _controls_label: Label
+var _hull_indicator: HullIndicator
 
 
 func _ready() -> void:
@@ -43,6 +44,11 @@ func _ready() -> void:
 	_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_result_label.visible = false
 	add_child(_result_label)
+
+	_hull_indicator = HullIndicator.new()
+	_hull_indicator.name = "HullIndicator"
+	_hull_indicator.visible = false
+	add_child(_hull_indicator)
 
 	EventBus.roster_changed.connect(_refresh_squad)
 	_refresh_squad()
@@ -109,6 +115,7 @@ func _process(_delta: float) -> void:
 		return
 
 	visible = true
+	_hull_indicator.visible = false
 	if _entity.is_in_group("helicopter"):
 		_helicopter_panel()
 	elif _entity.is_in_group("vehicle"):
@@ -130,6 +137,14 @@ func _refresh_controls() -> void:
 		hints.append("%s switch seat" % InputHints.label("switch_seat"))
 	hints.append("%s exit" % InputHints.label("exit_vehicle"))
 	_controls_label.text = "   ·   ".join(hints)
+
+
+func _refresh_hull_indicator() -> void:
+	if not _entity.has_method("using_first_person") or not _entity.using_first_person():
+		return
+	_hull_indicator.visible = true
+	_hull_indicator.global_position = _crosshair.global_position
+	_hull_indicator.set_hull_angle(_entity.turret_angles().x)
 
 
 func _seat() -> int:
@@ -232,6 +247,8 @@ func _vehicle_panel() -> void:
 		_crosshair.modulate.a = 1.0
 		_aim_reticle()
 		return
+
+	_refresh_hull_indicator()
 
 	var reload: float = _entity.reload_fraction()
 	_weapon_label.text = ("Cannon ready — %s" % InputHints.label(_fire_action())
