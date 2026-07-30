@@ -44,6 +44,7 @@ const GUNNER_SEAT := 1
 
 var owner_peer: int = 0
 var team: int = Roster.UNALIGNED
+@export var wreck_blast_damage: float = 200.0
 @export var max_health: float = 350.0
 var health: float = 350.0
 var wrecked: bool = false
@@ -442,6 +443,14 @@ func apply_damage(amount: float) -> void:
 	refresh_damage_state()
 	if health <= 0.0:
 		destroyed.emit(self)
+
+
+func blast_radius() -> float:
+	return _common.entry_radius() if _common != null else 0.0
+
+
+func blast_damage() -> float:
+	return wreck_blast_damage
 
 
 func is_alive() -> bool:

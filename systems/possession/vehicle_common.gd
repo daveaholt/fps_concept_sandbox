@@ -99,6 +99,18 @@ func shell_hidden() -> bool:
 	return _shell_hidden
 
 
+func entry_radius() -> float:
+	if _entry_zone == null:
+		return 0.0
+	var best := 0.0
+	for shape in _entry_zone.find_children("*", "CollisionShape3D", true, false):
+		var box := shape.shape as BoxShape3D
+		if box == null:
+			continue
+		best = maxf(best, maxf(box.size.x, box.size.z) * 0.5)
+	return best
+
+
 func entry_zone() -> Area3D:
 	return _entry_zone
 

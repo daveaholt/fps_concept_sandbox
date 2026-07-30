@@ -215,8 +215,10 @@ func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectilePa
 				projectile["time"], _rewind_offset(projectile)])
 		var was_alive := _target_alive(target)
 		target.apply_damage(damage)
-		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage,
-			was_alive and not _target_alive(target))
+		var killed := was_alive and not _target_alive(target)
+		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage, killed)
+		if killed:
+			_detonate_wreck(target, projectile)
 
 	if params.splash_radius > 0.0:
 		_apply_splash(point, params, target, projectile)
@@ -224,25 +226,49 @@ func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectilePa
 
 func _apply_splash(point: Vector3, params: ProjectileParams, direct_target,
 		projectile: Dictionary) -> void:
+	damage_in_radius(point, params.splash_radius, params.splash_damage, direct_target,
+		projectile, "splash")
+
+
+func damage_in_radius(point: Vector3, radius: float, full_damage: float, excluded,
+		projectile: Dictionary, tag: String) -> int:
+	if radius <= 0.0 or full_damage <= 0.0:
+		return 0
+	var caught := 0
 	for candidate in _targets:
-		if not is_instance_valid(candidate) or candidate == direct_target:
+		if not is_instance_valid(candidate) or candidate == excluded:
 			continue
 		if not _may_damage(projectile, candidate):
 			continue
 		var distance: float = (candidate as Node3D).global_position.distance_to(point)
-		if distance > params.splash_radius:
+		if distance > radius:
 			continue
-		var falloff := 1.0 - distance / params.splash_radius
-		var damage := params.splash_damage * falloff
+		var damage := full_damage * (1.0 - distance / radius)
 		if damage <= 0.0:
 			continue
 		hits_logged += 1
-		print("[splash] %s at %.1fm dmg=%.1f (radius %.1fm)"
-			% [candidate.name, distance, damage, params.splash_radius])
+		caught += 1
+		print("[%s] %s at %.1fm dmg=%.1f (radius %.1fm)"
+			% [tag, candidate.name, distance, damage, radius])
 		var was_alive := _target_alive(candidate)
 		candidate.apply_damage(damage)
-		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage,
-			was_alive and not _target_alive(candidate))
+		var killed := was_alive and not _target_alive(candidate)
+		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage, killed)
+		if killed:
+			_detonate_wreck(candidate, projectile)
+	return caught
+
+
+func _detonate_wreck(target, projectile: Dictionary) -> void:
+	if not target.has_method("blast_radius"):
+		return
+	var radius: float = target.blast_radius()
+	var damage: float = target.blast_damage()
+	if radius <= 0.0 or damage <= 0.0:
+		return
+	print("[wreck] %s detonates: %.1f damage over %.1f m" % [target.name, damage, radius])
+	damage_in_radius((target as Node3D).global_position, radius, damage, target,
+		projectile, "wreck")
 
 
 func _target_alive(target) -> bool:
