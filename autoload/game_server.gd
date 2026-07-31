@@ -339,17 +339,17 @@ func _deploy_bots() -> void:
 
 
 func _spawn_bot(peer: int) -> void:
-	var point := _random_spawn_point()
+	var point := _random_spawn_point(roster.team_of(peer))
 	if point == null:
 		return
 	var origin := disperse(point.global_position)
 	_spawn_infantry(peer, origin, -point.global_transform.basis.z)
 
 
-func _random_spawn_point() -> SpawnPoint:
+func _random_spawn_point(team: int = 0) -> SpawnPoint:
 	var options: Array = []
 	for node in get_tree().get_nodes_in_group("spawn_points"):
-		if node is SpawnPoint and node.enabled:
+		if node is SpawnPoint and node.available_to(team):
 			options.append(node)
 	if options.is_empty():
 		return _default_spawn
@@ -603,9 +603,9 @@ func handle_spawn_request(peer: int, spawn_point: SpawnPoint) -> void:
 	if spawn_point == null:
 		push_warning("[server] REJECTED spawn from peer %d: unknown spawn point" % peer)
 		return
-	if not spawn_point.enabled:
-		push_warning("[server] REJECTED spawn from peer %d: spawn point '%s' is disabled"
-			% [peer, spawn_point.display_name])
+	if not spawn_point.available_to(roster.team_of(peer)):
+		push_warning("[server] REJECTED spawn from peer %d: '%s' is not open to team %d"
+			% [peer, spawn_point.display_name, roster.team_of(peer)])
 		return
 	deploy(peer, spawn_point)
 

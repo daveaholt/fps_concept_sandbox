@@ -88,7 +88,7 @@ func _build_markers() -> void:
 		button.text = point.display_name
 		button.custom_minimum_size = MARKER_SIZE
 		button.size = MARKER_SIZE
-		button.disabled = not point.enabled
+		button.disabled = not point.available_to(GameClient.my_team)
 		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(_on_marker_pressed.bind(point))
 		_marker_layer.add_child(button)
@@ -173,7 +173,7 @@ func _poll_navigation() -> void:
 func selectable_targets() -> Array:
 	var out: Array = []
 	for point in _markers:
-		if not is_instance_valid(point) or not point.enabled:
+		if not is_instance_valid(point) or not point.available_to(GameClient.my_team):
 			continue
 		var button: Button = _markers[point]
 		out.append({"centre": button.position + button.size * 0.5,
@@ -279,7 +279,9 @@ func _refresh() -> void:
 
 	for point in _markers:
 		var button: Button = _markers[point]
-		if not point.enabled:
+		if not point.available_to(GameClient.my_team):
+			button.text = "%s%s" % [point.display_name,
+				"  (enemy)" if point.held_by_enemy(GameClient.my_team) else ""]
 			button.modulate = UNAVAILABLE
 		else:
 			button.modulate = SELECTED if point == _selected else Color(1, 1, 1)

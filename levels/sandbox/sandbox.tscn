@@ -1428,6 +1428,18 @@ text = "Main Base"
 font_size = 128
 outline_size = 16
 
+[node name="WestCamp" type="Marker3D" parent="SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -70, 0, 65)
+script = ExtResource("14_ct1gt")
+display_name = "West Camp"
+owner_team = 1
+
+[node name="EastCamp" type="Marker3D" parent="SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 0, 65)
+script = ExtResource("14_ct1gt")
+display_name = "East Camp"
+owner_team = 2
+
 [node name="Hilltop" type="Marker3D" parent="SpawnPoints" unique_id=371047867]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 15, -45)
 script = ExtResource("14_ct1gt")
@@ -1482,18 +1494,18 @@ navigation_mesh = SubResource("NavigationMesh_bots")
 [node name="Vehicles" type="Node3D" parent="." unique_id=1679540455]
 
 [node name="Tank" type="VehicleBody3D" parent="Vehicles" unique_id=698796726 instance=ExtResource("19_aj57l")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0.8, 40)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -62, 0.8, 72)
 script = ExtResource("20_nnn8o")
 
 [node name="Helicopter" parent="Vehicles" instance=ExtResource("24_heli")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0.65, -40)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -80, 0.65, 72)
 
 [node name="TankB" type="VehicleBody3D" parent="Vehicles" instance=ExtResource("19_aj57l")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -26, 0.8, 40)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 0.8, 72)
 script = ExtResource("20_nnn8o")
 
 [node name="HelicopterB" parent="Vehicles" instance=ExtResource("24_heli")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 80, 0.65, -20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 0.65, 72)
 
 [node name="DevOverlay" type="CanvasLayer" parent="." unique_id=1324878947]
 

@@ -104,7 +104,7 @@ ui/
 
 ## The map
 
-Two tanks and two helicopters are placed on it, far enough apart to make 1v1 duels worth setting up: the tanks face each other 44 m apart on the open ground, the helicopters 40 m apart on the airfield pad.
+Five spawn points: three contested landmarks (Main Base, Hilltop, Airfield) and two team camps 140 m apart that exist only to spawn on. Each camp has a tank and a helicopter parked beside it, so neither side crosses the map for armour.
 
 Roughly 200×200 m of graybox: a 20° ramp and a 25° cross-slope for movement testing, walls and cover, a 15 m raised **Hilltop** pad with an access ramp, an **Airfield** pad with a helipad, and a **Main Base** building cluster. Three spawn points are marked with beacons.
 
