@@ -32,6 +32,7 @@ signal destroyed(vehicle: Node)
 @export var armour_side: float = 1.0
 @export var armour_rear: float = 2.0
 @export var armour_top: float = 1.5
+@export var small_arms_scale: float = 0.1
 @export var deck_height: float = 1.25
 
 @export var gun_params_id: int = 3
@@ -398,22 +399,23 @@ func hit_centre_y() -> float:
 
 
 func resolve_sector(world_point: Vector3,
-		_params: ProjectileParams = null) -> Dictionary:
+		params: ProjectileParams = null) -> Dictionary:
+	var penetration := 1.0 if params == null or params.explosive else small_arms_scale
 	var local := global_transform.affine_inverse() * world_point
 	if local.y > deck_height:
-		return {"sector": "top", "multiplier": armour_top}
+		return {"sector": "top", "multiplier": armour_top * penetration}
 
 	var flat := Vector2(local.x, local.z)
 	if flat.length() < 0.001:
-		return {"sector": "top", "multiplier": armour_top}
+		return {"sector": "top", "multiplier": armour_top * penetration}
 
 	var forward_angle := rad_to_deg(Vector2(0.0, -1.0).angle_to(flat.normalized()))
 	var magnitude := absf(forward_angle)
 	if magnitude <= 45.0:
-		return {"sector": "front", "multiplier": armour_front}
+		return {"sector": "front", "multiplier": armour_front * penetration}
 	if magnitude >= 135.0:
-		return {"sector": "rear", "multiplier": armour_rear}
-	return {"sector": "side", "multiplier": armour_side}
+		return {"sector": "rear", "multiplier": armour_rear * penetration}
+	return {"sector": "side", "multiplier": armour_side * penetration}
 
 
 func team_id() -> int:
