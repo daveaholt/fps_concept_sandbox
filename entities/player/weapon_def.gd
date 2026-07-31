@@ -11,6 +11,7 @@ enum FireMode { FULL_AUTO, SEMI_AUTO }
 @export var magazine_size: int = 30
 @export var starting_reserve: int = 120
 @export var reload_time: float = 2.1
+@export var ads_fov: float = 42.0
 
 
 func seconds_per_shot() -> float:

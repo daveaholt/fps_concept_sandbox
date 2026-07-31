@@ -12,3 +12,4 @@ ballistics_params = "pistol"
 magazine_size = 12
 starting_reserve = 60
 reload_time = 1.5
+ads_fov = 55.0

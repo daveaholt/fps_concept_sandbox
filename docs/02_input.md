@@ -22,6 +22,7 @@ Every gameplay action carries **both** a keyboard/mouse binding and an Xbox-layo
 | `jump` | Space | A | |
 | `sprint` | Shift (hold) | L3 | |
 | `fire` | LMB | RT | Current weapon (03); hold = auto for rifle |
+| `zoom` | RMB | LT | Aim down sights — see 03 |
 | `reload` | R | B | Shares B with `exit_vehicle`; only one can ever match — see 03 |
 | `weapon_primary` | 1 | D-pad up | Rifle |
 | `weapon_secondary` | 2 | D-pad down | Pistol |

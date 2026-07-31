@@ -38,6 +38,7 @@ var was_killed: bool = false
 var _pending_auth: Dictionary = {}
 var _pending_auth_tick: int = 0
 var death_cam: DeathCam = null
+var aim_zoom: AimZoom = null
 var _death_hold: float = 0.0
 var gunshots: Array = []
 
@@ -80,9 +81,9 @@ func _start_local_systems() -> void:
 	scanner.name = "InteractionScanner"
 	add_child(scanner)
 
-	var zoom := GunnerZoom.new()
-	zoom.name = "GunnerZoom"
-	add_child(zoom)
+	aim_zoom = AimZoom.new()
+	aim_zoom.name = "AimZoom"
+	add_child(aim_zoom)
 
 	var plates := Nameplates.new()
 	plates.name = "Nameplates"

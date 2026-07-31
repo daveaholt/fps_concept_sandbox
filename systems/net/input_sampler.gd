@@ -64,7 +64,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var scale := deg_to_rad(mouse_sensitivity_deg_per_px)
+		var scale := deg_to_rad(mouse_sensitivity_deg_per_px) * look_scale()
 		_add_look(-event.relative.x * scale, -event.relative.y * scale)
 
 
@@ -95,6 +95,12 @@ func build_command(delta: float) -> InputCommand:
 	return cmd
 
 
+func look_scale() -> float:
+	if GameClient.aim_zoom == null:
+		return 1.0
+	return GameClient.aim_zoom.sensitivity_scale()
+
+
 func _add_look(delta_yaw: float, delta_pitch: float) -> void:
 	yaw = wrapf(yaw + delta_yaw, -PI, PI)
 	var applied := -delta_pitch if invert_look_y else delta_pitch
@@ -109,7 +115,7 @@ func _apply_stick_look(delta: float) -> void:
 	if magnitude < 0.001:
 		return
 	var shaped := stick.normalized() * pow(magnitude, stick_look_exponent)
-	var rate := deg_to_rad(stick_look_speed_deg) * delta
+	var rate := deg_to_rad(stick_look_speed_deg) * look_scale() * delta
 	_add_look(-shaped.x * rate, -shaped.y * rate)
 
 
@@ -153,7 +159,11 @@ func fire_action() -> String:
 
 
 func can_zoom() -> bool:
-	return vehicle_seat() >= Seats.DRIVER and not _is_piloting()
+	if _is_piloting():
+		return false
+	if vehicle_seat() >= Seats.DRIVER:
+		return true
+	return GameClient.my_entity != null and is_instance_valid(GameClient.my_entity)
 
 
 func vehicle_seat() -> int:
@@ -196,6 +206,7 @@ func _button_mask() -> int:
 	if Input.is_action_pressed("jump"): bits |= InputCommand.JUMP
 	if Input.is_action_pressed("sprint"): bits |= InputCommand.SPRINT
 	if Input.is_action_pressed(fire_action()): bits |= InputCommand.FIRE
+	if Input.is_action_pressed("zoom"): bits |= InputCommand.ADS
 	if Input.is_action_pressed("interact"): bits |= InputCommand.INTERACT
 	if Input.is_action_pressed("reload"): bits |= InputCommand.RELOAD
 	if Input.is_action_pressed("exit_vehicle"): bits |= InputCommand.EXIT

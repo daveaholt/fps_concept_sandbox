@@ -9,3 +9,4 @@ ballistics_params = "rifle"
 magazine_size = 30
 starting_reserve = 150
 reload_time = 2.1
+ads_fov = 38.0

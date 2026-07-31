@@ -21,6 +21,8 @@ static func simulate(state: InfantryState, cmd: InputCommand, tuning: InfantryTu
 	var speed := tuning.walk_speed
 	if cmd.held(InputCommand.SPRINT) and wish_dir.dot(forward) > tuning.sprint_forward_dot:
 		speed = tuning.sprint_speed
+	if cmd.held(InputCommand.ADS):
+		speed *= tuning.ads_speed_scale
 
 	var target := wish_dir * speed * throttle
 	var accel := tuning.accel if s.on_floor else tuning.air_accel

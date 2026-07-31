@@ -59,6 +59,8 @@ Keyboard/mouse and an Xbox-layout gamepad both work at once — no mode switch, 
 | Jump | `Space` | `A` |
 | Sprint | `Shift` (forward-ish only) | `L3` |
 | Fire | `LMB` — rifle full-auto, pistol semi-auto | `RT` |
+| Aim | `RMB` — narrows the view and slows you down | `LT` |
+| Reload | `R` | `B` |
 | Weapons | `1` rifle · `2` pistol · scroll cycles | D-pad up/down · `Y` swaps |
 | Fullscreen | `F11` | — |
 | Deploy map | `M` — recon while alive; opens 2.5 s after death, once the death cam has held on your body; opens automatically at session start · click a marker, `Enter` deploys | `Back` · either stick picks a marker, `A` deploys |

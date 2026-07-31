@@ -3,6 +3,7 @@ extends Resource
 
 @export var walk_speed: float = 5.0
 @export var sprint_speed: float = 8.5
+@export var ads_speed_scale: float = 0.45
 @export var accel: float = 60.0
 @export var air_accel: float = 10.0
 @export var jump_velocity: float = 4.8
