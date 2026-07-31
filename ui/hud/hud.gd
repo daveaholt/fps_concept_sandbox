@@ -19,6 +19,7 @@ var _hull_indicator: HullIndicator
 var _hit_marker: HitMarker
 var _kill_banner: Label
 var _banner_left: float = 0.0
+var _reload_label: Label
 
 
 func _ready() -> void:
@@ -72,6 +73,21 @@ func _ready() -> void:
 	_kill_banner.visible = false
 	_kill_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_kill_banner)
+
+	_reload_label = Label.new()
+	_reload_label.name = "ReloadLabel"
+	_reload_label.set_anchors_preset(Control.PRESET_CENTER)
+	_reload_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_reload_label.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_reload_label.position = Vector2(0.0, 40.0)
+	_reload_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_reload_label.add_theme_font_size_override("font_size", 22)
+	_reload_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.45))
+	_reload_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_reload_label.add_theme_constant_override("outline_size", 5)
+	_reload_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_reload_label.visible = false
+	add_child(_reload_label)
 
 	EventBus.hit_confirmed.connect(_on_hit_confirmed)
 	EventBus.roster_changed.connect(_refresh_squad)
@@ -140,6 +156,7 @@ func _process(_delta: float) -> void:
 		return
 
 	visible = true
+	_reload_label.visible = false
 	_hit_marker.global_position = _crosshair.global_position
 	_hull_indicator.visible = false
 	if _entity.is_in_group("helicopter"):
@@ -245,11 +262,16 @@ func _infantry_panel() -> void:
 	var weapon: WeaponDef = _entity.get_active_weapon()
 	if weapon == null:
 		_weapon_label.text = "—"
-	elif state.reloading():
-		_weapon_label.text = "%s   reloading" % weapon.display_name
 	else:
 		_weapon_label.text = "%s   %d / %d" % [weapon.display_name,
 			state.loaded(state.weapon_index), state.spare(state.weapon_index)]
+
+	if state.reloading():
+		_reload_label.text = "RELOADING"
+		_reload_label.visible = true
+	elif state.loaded(state.weapon_index) <= 0 and state.spare(state.weapon_index) > 0:
+		_reload_label.text = "RELOAD  [%s]" % InputHints.label("reload")
+		_reload_label.visible = true
 
 	var drawing := state.switch_progress < 1.0
 	_draw_bar.visible = drawing

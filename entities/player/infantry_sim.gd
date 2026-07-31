@@ -118,7 +118,7 @@ static func _step_weapons(s: InfantryState, cmd: InputCommand, tuning: InfantryT
 		wants_shot = (pressed & InputCommand.FIRE) != 0
 
 	var empty := s.loaded(s.weapon_index) <= 0
-	if (pressed & InputCommand.RELOAD) != 0 or (wants_shot and empty):
+	if (pressed & InputCommand.RELOAD) != 0:
 		_begin_reload(s, weapon)
 		return
 

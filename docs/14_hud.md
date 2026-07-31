@@ -38,7 +38,7 @@ Three colours carry meaning everywhere on screen. Nothing else may use them.
 
 **Bottom right — self.** Current weapon, ammo as `loaded / reserve`, and your health as a green bar. Above it, your squad: one row per squadmate, name and a health bar each. Placeholder names are fine.
 
-**Centre — the moment.** Reticle, hit marker, hull indicator (tank sight only), interaction prompt, kill banner. Unchanged from M7.
+**Centre — the moment.** Reticle, hit marker, hull indicator (tank sight only), interaction prompt, kill banner, and the reload state — `RELOADING` while it runs, `RELOAD [B]` when the magazine is dry and there is reserve left. Reload feedback sits under the reticle because it is the one thing you need while looking down the sights.
 
 **Top centre — the match.** Result banner only.
 
