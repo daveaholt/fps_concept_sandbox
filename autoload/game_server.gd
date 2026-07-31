@@ -426,10 +426,23 @@ func _return_to_lobby() -> void:
 	winning_team = 0
 	phase = Phase.LOBBY
 	_clear_bots()
+	_reset_vehicles()
 	print("[server] back to the lobby with slots kept (%d players)"
 		% roster.occupied_count())
 	phase_changed.emit(phase)
 	_broadcast_roster()
+
+
+func _reset_vehicles() -> void:
+	_wrecks.clear()
+	for entry in _corpses:
+		if is_instance_valid(entry["body"]):
+			entry["body"].queue_free()
+	_corpses.clear()
+	for vehicle in _vehicles:
+		if is_instance_valid(vehicle) and vehicle.has_method("reset_for_lobby"):
+			vehicle.reset_for_lobby()
+	print("[server] %d vehicles reset for the lobby" % _vehicles.size())
 
 
 func _clear_bots() -> void:

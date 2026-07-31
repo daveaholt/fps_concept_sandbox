@@ -534,6 +534,29 @@ func enter_wreck() -> void:
 	owner_peer = 0
 
 
+func reset_for_lobby() -> void:
+	for peer in seats.occupants():
+		seats.release(peer)
+	owner_peer = 0
+	team = Roster.UNALIGNED
+	_local_seat = -1
+	unpossess()
+	revive()
+	_gun_yaw_angle = 0.0
+	_gun_pitch_angle = 0.0
+	_gun_heat = 0.0
+	_gun_cooldown = 0.0
+	_gun_aim = Vector3.FORWARD
+	_gunner_view_aim = Vector3.FORWARD
+	_apply_gun()
+	rotor_rpm_norm = 0.0
+	collective = 0.0
+	_chase_active = false
+	for i in _last_command.size():
+		_last_command[i] = InputCommand.new()
+		_pending[i] = []
+
+
 func revive() -> void:
 	wrecked = false
 	wreck_shown = false
