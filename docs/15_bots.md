@@ -14,7 +14,7 @@ Bots take **roster slots** like anyone else, which is what makes teams, squads, 
 
 ## Navigation
 
-A `NavigationRegion3D` baked at level load from the graybox's own **static colliders** (`geometry_parsed_geometry_type = 1`, world mask), source geometry taken from the `navmesh_source` group so the region can sit beside `Terrain` rather than having to parent it.
+A `NavigationRegion3D` baked **on demand** — the first time bots are filled in — from the graybox's own **static colliders** (`geometry_parsed_geometry_type = 1`, world mask), source geometry taken from the `navmesh_source` group so the region can sit beside `Terrain` rather than having to parent it.
 
 Paths come from `NavigationServer3D.map_get_path()` directly rather than a `NavigationAgent3D` per bot — no node churn for sixteen agents, and the controller already owns the per-bot state a path needs. Bots repath every 0.8 s.
 
@@ -32,3 +32,4 @@ Current behaviour is deliberately simple: pick the nearest enemy, path to them, 
 - M7: bots respawn on a timer and spend a ticket each time, so a bot-filled match burns tickets fast. That is honest — sixteen players dying is sixteen tickets — but `START_TICKETS` at 25 was chosen for human-paced matches and probably wants revisiting alongside the 8v8 target.
 - M7: bots do not use vehicles. `08` lists that as part of the ask and it is deliberately staged second — a bot that drives needs seat requests, a different command shape per seat, and a reason to prefer a vehicle over walking, none of which the infantry loop needs.
 - M7: no squad coordination, no cover, no reloading behind it, no grenades — a bot walks at its target and shoots. Enough to make a 16-player match testable by one person, which was the point.
+- **M7: the navmesh bakes lazily, not at level load.** Baking on load cost every one of the fifty test harnesses a bake it had no use for, and pushed the slowest suite past its timeout. `ensure_navigation()` bakes once, the first time `fill_with_bots()` runs, so a match with bots pays for it and nothing else does.

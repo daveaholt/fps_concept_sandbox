@@ -45,6 +45,7 @@ var ballistics: BallisticsManager = null
 var _vehicles: Array = []
 var _wrecks: Array = []
 var _navigation: NavigationRegion3D = null
+var _navigation_baked: bool = false
 var bots := BotController.new()
 var fill_bots: bool = true
 var _bot_respawns: Array = []
@@ -105,6 +106,16 @@ func register_level(spawn_root: Node, default_spawn: SpawnPoint,
 
 func register_navigation(region: NavigationRegion3D) -> void:
 	_navigation = region
+	_navigation_baked = false
+
+
+func ensure_navigation() -> void:
+	if _navigation == null or _navigation_baked:
+		return
+	_navigation_baked = true
+	_navigation.bake_navigation_mesh(false)
+	print("[server] navigation baked (%d polygons)"
+		% _navigation.navigation_mesh.get_polygon_count())
 
 
 func navigation_map() -> RID:
@@ -322,6 +333,7 @@ func bot_count() -> int:
 func fill_with_bots() -> void:
 	if not fill_bots:
 		return
+	ensure_navigation()
 	for slot in Roster.SLOT_COUNT:
 		if not roster.is_free(slot):
 			continue
@@ -616,7 +628,9 @@ func deploy(peer_id: int, spawn_point: SpawnPoint = null) -> Node:
 	if _possession.has(peer_id):
 		return _possession[peer_id]
 
-	var point := spawn_point if spawn_point != null else _default_spawn
+	var point := spawn_point
+	if point == null:
+		point = _random_spawn_point(roster.team_of(peer_id))
 	if point == null:
 		push_error("[server] no spawn point available for peer %d" % peer_id)
 		return null

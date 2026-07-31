@@ -110,6 +110,14 @@ func _build_markers() -> void:
 		_marker_layer.move_child(_reticle, -1)
 
 
+func _refusal(point: SpawnPoint) -> String:
+	if not point.enabled:
+		return "  (closed)"
+	if point.is_contested():
+		return "  (contested)"
+	return "  (enemy)"
+
+
 func _on_marker_pressed(point: SpawnPoint) -> void:
 	_selected = point
 	_selected_mate = 0
@@ -279,11 +287,13 @@ func _refresh() -> void:
 
 	for point in _markers:
 		var button: Button = _markers[point]
-		if not point.available_to(GameClient.my_team):
-			button.text = "%s%s" % [point.display_name,
-				"  (enemy)" if point.held_by_enemy(GameClient.my_team) else ""]
+		var open_to_me: bool = point.available_to(GameClient.my_team)
+		button.disabled = not open_to_me
+		if not open_to_me:
+			button.text = "%s%s" % [point.display_name, _refusal(point)]
 			button.modulate = UNAVAILABLE
 		else:
+			button.text = point.display_name
 			button.modulate = SELECTED if point == _selected else Color(1, 1, 1)
 
 	var squad_colour := Roster.squad_colour(Roster.squad_of_slot(GameClient.my_slot()))

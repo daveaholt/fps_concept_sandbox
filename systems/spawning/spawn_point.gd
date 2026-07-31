@@ -7,9 +7,11 @@ extends Marker3D
 
 
 func available_to(team: int) -> bool:
-	if not enabled:
-		return false
-	return owner_team == 0 or owner_team == team
+	return enabled and owner_team != 0 and owner_team == team
+
+
+func is_contested() -> bool:
+	return owner_team == 0
 
 
 func held_by_enemy(team: int) -> bool:

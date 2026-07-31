@@ -11,12 +11,4 @@ func _ready() -> void:
 	for vehicle in get_node("Vehicles").get_children():
 		GameServer.register_vehicle(vehicle)
 	GameClient.register_level(players, ballistics)
-	_bake_navigation()
-
-
-func _bake_navigation() -> void:
-	var region: NavigationRegion3D = get_node_or_null("Navigation")
-	if region == null:
-		return
-	region.bake_navigation_mesh(false)
-	GameServer.register_navigation(region)
+	GameServer.register_navigation(get_node_or_null("Navigation"))
