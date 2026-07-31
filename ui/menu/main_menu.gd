@@ -3,6 +3,8 @@ extends Control
 var _address: LineEdit
 var _status: Label
 var _buttons: VBoxContainer
+var _host_button: Button
+var _join_button: Button
 var _dismissed: bool = false
 
 
@@ -11,6 +13,7 @@ func _ready() -> void:
 		queue_free()
 		return
 	_build()
+	GameClient.connection_state_changed.connect(_on_connection_state)
 	if GameClient.sampler != null:
 		GameClient.sampler.release_mouse()
 
@@ -35,23 +38,23 @@ func _build() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_buttons.add_child(title)
 
-	var host := Button.new()
-	host.text = "HOST"
-	host.custom_minimum_size = Vector2(260, 46)
-	host.focus_mode = Control.FOCUS_NONE
-	host.pressed.connect(_on_host)
-	_buttons.add_child(host)
+	_host_button = Button.new()
+	_host_button.text = "HOST"
+	_host_button.custom_minimum_size = Vector2(260, 46)
+	_host_button.focus_mode = Control.FOCUS_NONE
+	_host_button.pressed.connect(_on_host)
+	_buttons.add_child(_host_button)
 
 	var join_row := HBoxContainer.new()
 	join_row.add_theme_constant_override("separation", 8)
 	_buttons.add_child(join_row)
 
-	var join := Button.new()
-	join.text = "JOIN"
-	join.custom_minimum_size = Vector2(120, 46)
-	join.focus_mode = Control.FOCUS_NONE
-	join.pressed.connect(_on_join)
-	join_row.add_child(join)
+	_join_button = Button.new()
+	_join_button.text = "JOIN"
+	_join_button.custom_minimum_size = Vector2(120, 46)
+	_join_button.focus_mode = Control.FOCUS_NONE
+	_join_button.pressed.connect(_on_join)
+	join_row.add_child(_join_button)
 
 	_address = LineEdit.new()
 	_address.text = NetCli.get_connect_address()
@@ -86,8 +89,24 @@ func _on_join() -> void:
 		_status.text = "enter an address first"
 		return
 	_status.text = "connecting to %s ..." % address
+	_set_busy(true)
 	GameClient.begin(NetCli.Mode.CLIENT, address, NetCli.get_port())
-	_dismiss()
+
+
+func _set_busy(busy: bool) -> void:
+	_host_button.disabled = busy
+	_join_button.disabled = busy
+
+
+func _on_connection_state(state: int) -> void:
+	if _dismissed:
+		return
+	if state == GameClient.State.CONNECTED:
+		_dismiss()
+	elif state == GameClient.State.FAILED:
+		_status.text = "could not reach %s — wrong address, no server, or firewalled" 			% _address.text.strip_edges()
+		_set_busy(false)
+		GameClient.abandon_connection()
 
 
 func _on_quit() -> void:
