@@ -10,6 +10,7 @@ enum State {
 }
 
 const CONNECT_TIMEOUT_SEC := 8.0
+const GUNSHOT_FADE_SECONDS := 3.0
 
 var my_entity: Node = null
 var is_active: bool = false
@@ -38,6 +39,7 @@ var _pending_auth: Dictionary = {}
 var _pending_auth_tick: int = 0
 var death_cam: DeathCam = null
 var _death_hold: float = 0.0
+var gunshots: Array = []
 
 
 func _ready() -> void:
@@ -142,6 +144,7 @@ func is_predicting() -> bool:
 
 func _physics_process(delta: float) -> void:
 	_tick_death_hold(delta)
+	_age_gunshots(delta)
 	if sampler == null or my_entity == null or not is_instance_valid(my_entity):
 		return
 
@@ -237,6 +240,7 @@ func spawn_tracer(origin: Vector3, direction: Vector3, params_id: int, shooter_p
 		return
 	ballistics.spawn(origin, direction, params_id, shooter_peer, 0.0,
 		roster.team_of(shooter_peer))
+	note_gunshot(origin, shooter_peer)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -564,6 +568,26 @@ func _tick_death_hold(delta: float) -> void:
 	if death_cam != null:
 		death_cam.stop()
 	set_deploy_map(true)
+
+
+func note_gunshot(origin: Vector3, shooter_peer: int) -> void:
+	if shooter_peer == 0 or shooter_peer == get_peer_id():
+		return
+	var shooter_team := roster.team_of(shooter_peer)
+	if shooter_team == Roster.UNALIGNED or shooter_team == my_team:
+		return
+	gunshots.append({"position": origin, "age": 0.0})
+
+
+func _age_gunshots(delta: float) -> void:
+	if gunshots.is_empty():
+		return
+	var live: Array = []
+	for shot in gunshots:
+		shot["age"] = float(shot["age"]) + delta
+		if float(shot["age"]) < GUNSHOT_FADE_SECONDS:
+			live.append(shot)
+	gunshots = live
 
 
 func in_death_cam() -> bool:

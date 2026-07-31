@@ -115,8 +115,7 @@ func _on_entity_fired(origin: Vector3, direction: Vector3, params_id: int, peer_
 	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
 	ballistics.spawn(origin, direction, params_id, peer_id, view_delay,
 		roster.team_of(peer_id))
-	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
-		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
+	_broadcast_shot(origin, direction, params_id, peer_id)
 
 
 func get_port() -> int:
@@ -158,8 +157,7 @@ func _on_vehicle_fired(origin: Vector3, direction: Vector3, params_id: int, vehi
 	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
 	ballistics.spawn(origin, direction, params_id, peer_id, view_delay,
 		roster.team_of(peer_id))
-	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
-		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
+	_broadcast_shot(origin, direction, params_id, peer_id)
 
 
 func _on_vehicle_gun_fired(origin: Vector3, direction: Vector3, params_id: int,
@@ -170,6 +168,12 @@ func _on_vehicle_gun_fired(origin: Vector3, direction: Vector3, params_id: int,
 	var view_delay := NetCli.INTERP_DELAY_MS * 0.001 + get_peer_rtt(peer_id) * 0.5
 	ballistics.spawn(origin, direction, params_id, peer_id, view_delay,
 		roster.team_of(peer_id))
+	_broadcast_shot(origin, direction, params_id, peer_id)
+
+
+func _broadcast_shot(origin: Vector3, direction: Vector3, params_id: int,
+		peer_id: int) -> void:
+	GameClient.note_gunshot(origin, peer_id)
 	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
 		GameClient.spawn_tracer.rpc(origin, direction, params_id, peer_id)
 

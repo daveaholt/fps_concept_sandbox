@@ -27,6 +27,24 @@ func clear() -> void:
 		_slots.append(0)
 
 
+const CALLSIGNS := [
+	"Alder", "Brack", "Cobb", "Dray",
+	"Ewart", "Finch", "Gale", "Hoyt",
+	"Ivor", "Jessop", "Kerr", "Lund",
+	"Mercer", "Nash", "Oakes", "Pike",
+]
+
+
+static func callsign(slot: int) -> String:
+	if slot < 0 or slot >= CALLSIGNS.size():
+		return "—"
+	return CALLSIGNS[slot]
+
+
+func name_of(peer_id: int) -> String:
+	return callsign(slot_of(peer_id))
+
+
 static func squad_of_slot(slot: int) -> int:
 	return slot / SQUAD_SIZE
 
