@@ -102,6 +102,8 @@ ui/
 
 ## The map
 
+Two tanks and two helicopters are placed on it, far enough apart to make 1v1 duels worth setting up: the tanks face each other 44 m apart on the open ground, the helicopters 40 m apart on the airfield pad.
+
 Roughly 200×200 m of graybox: a 20° ramp and a 25° cross-slope for movement testing, walls and cover, a 15 m raised **Hilltop** pad with an access ramp, an **Airfield** pad with a helipad, and a **Main Base** building cluster. Three spawn points are marked with beacons.
 
 Running north out of the perimeter gap is a **500 m firing range**: target boards at 100/200/300/400/500 m, cross-lane distance stripes, a painted grid backstop for reading bullet drop by eye, and a target dummy at 25 m painted in hit-zone colours (red head, yellow torso, blue limbs).
