@@ -61,7 +61,7 @@ Keyboard/mouse and an Xbox-layout gamepad both work at once — no mode switch, 
 | Fire | `LMB` — rifle full-auto, pistol semi-auto | `RT` |
 | Weapons | `1` rifle · `2` pistol · scroll cycles | D-pad up/down · `Y` swaps |
 | Fullscreen | `F11` | — |
-| Deploy map | `M` — recon while alive; opens automatically at session start and on death | `Back` |
+| Deploy map | `M` — recon while alive; opens automatically at session start and on death · click a marker, `Enter` deploys | `Back` · either stick picks a marker, `A` deploys |
 | Dev damage | `K` — 25 damage to yourself, to exercise the death loop | — |
 
 In a vehicle (`E` enters, `F` / `B` exits, `C` / `A` switches seat):

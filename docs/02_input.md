@@ -74,7 +74,7 @@ Stick deadzone is 0.2 for sticks and 0.5 for triggers-as-buttons. The 0.5 defaul
 
 ## Deploy map (mouse-driven)
 
-LMB selects a spawn marker; **Deploy** button (or Enter / A) confirms; M / Esc closes the map *if* currently alive. No keyboard marker navigation in the prototype.
+LMB selects a spawn marker; **Deploy** button (or Enter / A) confirms; M / Esc closes the map *if* currently alive. **M7: either stick also moves the selection between markers**, so the screen is fully usable on a pad — see 07. Still no keyboard *arrow-key* navigation; the keyboard path is the mouse.
 
 ## Networked sampling
 
