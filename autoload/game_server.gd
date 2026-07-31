@@ -203,12 +203,12 @@ func request_exit_rpc() -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func request_slot(slot: int) -> void:
+func request_slot(slot: int, chosen_name: String = "") -> void:
 	if is_active:
-		handle_slot_request(multiplayer.get_remote_sender_id(), slot)
+		handle_slot_request(multiplayer.get_remote_sender_id(), slot, chosen_name)
 
 
-func handle_slot_request(peer: int, slot: int) -> void:
+func handle_slot_request(peer: int, slot: int, chosen_name: String = "") -> void:
 	if not is_active:
 		return
 	if not roster.is_valid_slot(slot):
@@ -224,6 +224,7 @@ func handle_slot_request(peer: int, slot: int) -> void:
 	if not roster.assign(peer, slot):
 		push_warning("[server] REJECTED slot %d for peer %d" % [slot, peer])
 		return
+	roster.set_slot_name(slot, chosen_name)
 	print("[server] peer %d took slot %d (%s, team %d)"
 		% [peer, slot, Roster.squad_name(roster.squad_of(peer)), roster.team_of(peer)])
 	_broadcast_roster()
@@ -319,9 +320,11 @@ func team_of_peer(peer_id: int) -> int:
 
 func _broadcast_roster() -> void:
 	roster_changed.emit()
-	GameClient.apply_roster(roster.to_array(), int(phase), tickets, winning_team)
+	GameClient.apply_roster(roster.to_array(), int(phase), tickets, winning_team,
+		roster.names_to_array())
 	if get_peer_count() > 0 and multiplayer.multiplayer_peer != null:
-		GameClient.receive_roster.rpc(roster.to_array(), int(phase), tickets, winning_team)
+		GameClient.receive_roster.rpc(roster.to_array(), int(phase), tickets,
+			winning_team, roster.names_to_array())
 
 
 func handle_enter_request(peer: int, vehicle: Node) -> void:

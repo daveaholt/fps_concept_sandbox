@@ -6,6 +6,7 @@ const SLOT_HEIGHT := 40
 var _slot_buttons: Array[Button] = []
 var _start_button: Button
 var _status: Label
+var _name_field: LineEdit
 
 
 func _ready() -> void:
@@ -34,6 +35,21 @@ func _build() -> void:
 	title.text = "CHOOSE A SLOT"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root_box.add_child(title)
+
+	var name_row := HBoxContainer.new()
+	name_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	name_row.add_theme_constant_override("separation", 10)
+	root_box.add_child(name_row)
+
+	var name_label := Label.new()
+	name_label.text = "CALLSIGN"
+	name_row.add_child(name_label)
+
+	_name_field = LineEdit.new()
+	_name_field.max_length = Roster.NAME_MAX_LENGTH
+	_name_field.custom_minimum_size = Vector2(200, 38)
+	_name_field.placeholder_text = "leave blank for a default"
+	name_row.add_child(_name_field)
 
 	var teams := HBoxContainer.new()
 	teams.add_theme_constant_override("separation", 40)
@@ -90,7 +106,7 @@ func _build_squad(squad: int) -> VBoxContainer:
 
 
 func _on_slot_pressed(slot: int) -> void:
-	GameClient.request_slot(slot)
+	GameClient.request_slot(slot, _name_field.text)
 
 
 func _on_start() -> void:
@@ -116,10 +132,10 @@ func _refresh() -> void:
 			button.text = "— empty —"
 			button.disabled = false
 		elif occupant == GameClient.get_peer_id():
-			button.text = "YOU"
+			button.text = "%s (you)" % GameClient.roster.name_of_slot(slot)
 			button.disabled = true
 		else:
-			button.text = "Player %d" % occupant
+			button.text = GameClient.roster.name_of_slot(slot)
 			button.disabled = true
 		button.add_theme_color_override("font_color",
 			Roster.squad_colour(squad) if occupant != 0 else Color(0.55, 0.58, 0.62))

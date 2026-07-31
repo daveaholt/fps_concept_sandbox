@@ -84,6 +84,10 @@ func _start_local_systems() -> void:
 	zoom.name = "GunnerZoom"
 	add_child(zoom)
 
+	var plates := Nameplates.new()
+	plates.name = "Nameplates"
+	add_child(plates)
+
 	death_cam = DeathCam.new()
 	death_cam.name = "DeathCam"
 	add_child(death_cam)
@@ -245,14 +249,16 @@ func spawn_tracer(origin: Vector3, direction: Vector3, params_id: int, shooter_p
 
 @rpc("authority", "call_remote", "reliable")
 func receive_roster(slots: Array, new_phase: int, new_tickets: Dictionary,
-		winner: int) -> void:
-	apply_roster(slots, new_phase, new_tickets, winner)
+		winner: int, names: Array = []) -> void:
+	apply_roster(slots, new_phase, new_tickets, winner, names)
 
 
-func apply_roster(slots: Array, new_phase: int, new_tickets := {}, winner := 0) -> void:
+func apply_roster(slots: Array, new_phase: int, new_tickets := {}, winner := 0,
+		names := []) -> void:
 	tickets = new_tickets
 	winning_team = winner
 	roster.from_array(slots)
+	roster.names_from_array(names)
 	var was := phase
 	phase = new_phase
 	my_team = roster.team_of(get_peer_id())
@@ -263,11 +269,11 @@ func apply_roster(slots: Array, new_phase: int, new_tickets := {}, winner := 0) 
 		close_deploy_map()
 
 
-func request_slot(slot: int) -> void:
+func request_slot(slot: int, chosen_name: String = "") -> void:
 	if GameServer.is_active:
-		GameServer.handle_slot_request(get_peer_id(), slot)
+		GameServer.handle_slot_request(get_peer_id(), slot, chosen_name)
 	elif can_rpc():
-		GameServer.request_slot.rpc_id(1, slot)
+		GameServer.request_slot.rpc_id(1, slot, chosen_name)
 
 
 func request_start() -> void:

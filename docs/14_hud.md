@@ -67,7 +67,7 @@ North-up. Enemies are never drawn from world state, only from gunshot events.
 Three things the HUD wants that do not exist yet, each its own piece of work:
 
 1. **Ammo.** `WeaponDef` has fire mode, rpm and draw time; `InfantryState` has no ammo field at all — weapons are infinite with no reload. Magazine, reserve and a reload action land inside `InfantrySim.simulate`, the pure step function the server and the predicting client both run, so it has to be deterministic and replay-safe or reconciliation breaks. **Being built before the HUD pass**, so the readout is never a placeholder that lies.
-2. **Player names.** `Roster` holds peer and slot. The squad list needs a name per slot, replicated with the roster.
+2. ~~**Player names.**~~ **Done.** Chosen in the lobby, stored per slot, replicated with the roster, falling back to a fixed callsign — see 13.
 3. **Kills and deaths.** Tracked per player server-side, replicated, for the after-battle report below.
 
 ## After-battle report (stretch)

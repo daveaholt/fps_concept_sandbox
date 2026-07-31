@@ -15,6 +15,7 @@ const SQUAD_COLOURS := [
 ]
 
 var _slots: Array[int] = []
+var _names: Array[String] = []
 
 
 func _init() -> void:
@@ -23,8 +24,10 @@ func _init() -> void:
 
 func clear() -> void:
 	_slots = []
+	_names = []
 	for i in SLOT_COUNT:
 		_slots.append(0)
+		_names.append("")
 
 
 const CALLSIGNS := [
@@ -41,8 +44,33 @@ static func callsign(slot: int) -> String:
 	return CALLSIGNS[slot]
 
 
+const NAME_MAX_LENGTH := 14
+
+
+static func sanitise_name(raw: String) -> String:
+	var cleaned := ""
+	for character in raw.strip_edges():
+		if character.length() != 1 or character.unicode_at(0) < 32:
+			continue
+		cleaned += character
+		if cleaned.length() >= NAME_MAX_LENGTH:
+			break
+	return cleaned.strip_edges()
+
+
+func name_of_slot(slot: int) -> String:
+	if not is_valid_slot(slot):
+		return "—"
+	return _names[slot] if _names[slot] != "" else callsign(slot)
+
+
+func set_slot_name(slot: int, raw: String) -> void:
+	if is_valid_slot(slot):
+		_names[slot] = sanitise_name(raw)
+
+
 func name_of(peer_id: int) -> String:
-	return callsign(slot_of(peer_id))
+	return name_of_slot(slot_of(peer_id))
 
 
 static func squad_of_slot(slot: int) -> int:
@@ -117,6 +145,7 @@ func release(peer_id: int) -> void:
 	var slot := slot_of(peer_id)
 	if slot >= 0:
 		_slots[slot] = 0
+		_names[slot] = ""
 
 
 func occupied_count() -> int:
@@ -149,6 +178,15 @@ func squadmates(peer_id: int) -> Array[int]:
 
 func to_array() -> Array[int]:
 	return _slots.duplicate()
+
+
+func names_to_array() -> Array[String]:
+	return _names.duplicate()
+
+
+func names_from_array(values: Array) -> void:
+	for i in mini(values.size(), SLOT_COUNT):
+		_names[i] = sanitise_name(str(values[i]))
 
 
 func from_array(values: Array) -> void:
