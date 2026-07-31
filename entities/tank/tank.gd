@@ -29,7 +29,7 @@ signal destroyed(vehicle: Node)
 @export var cannon_pitch_max_deg: float = 20.0
 
 @export var armour_front: float = 1.0
-@export var armour_side: float = 1.25
+@export var armour_side: float = 1.0
 @export var armour_rear: float = 2.0
 @export var armour_top: float = 1.5
 @export var deck_height: float = 1.25
