@@ -29,6 +29,7 @@
 [ext_resource type="Script" path="res://ui/deploy_map/deploy_map.gd" id="23_2l4r6"]
 [ext_resource type="Script" path="res://ui/lobby/lobby.gd" id="25_lobby"]
 [ext_resource type="Script" path="res://ui/menu/main_menu.gd" id="26_menu"]
+[ext_resource type="Script" path="res://ui/hud/death_banner.gd" id="27_death"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_60cnp"]
 sky_top_color = Color(0.3, 0.46, 0.72, 1)
@@ -1520,6 +1521,13 @@ script = ExtResource("23_2l4r6")
 
 [node name="Lobby" type="Control" parent="UI"]
 script = ExtResource("25_lobby")
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="DeathBanner" type="Control" parent="UI"]
+script = ExtResource("27_death")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

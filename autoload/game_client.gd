@@ -566,6 +566,10 @@ func _tick_death_hold(delta: float) -> void:
 	set_deploy_map(true)
 
 
+func in_death_cam() -> bool:
+	return _death_hold > 0.0
+
+
 func end_death_cam() -> void:
 	_death_hold = 0.0
 	if death_cam != null:
