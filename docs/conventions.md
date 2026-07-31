@@ -69,4 +69,8 @@ for f in tools/verify_*.gd; do
 done
 ```
 
-`verify_fullscreen.gd` fails headlessly by design — it asserts window-mode changes that need a real window. Everything else should pass.
+`verify_fullscreen.gd` fails headlessly by design — it asserts window-mode changes that need a real window. Everything else should pass; 51 suites, 50 green.
+
+The suites are **tracked in the repo** as of M7. They were kept out for a long stretch, which meant every session that ended took its verification with it. They carry no comments like any other source here, so the `grep` rule applies to them too.
+
+Two kinds of tool are deliberately **not** kept: the one-shot scene generators (`build_*`), because `08` records that the graybox generator was not retained and the scene is the artifact of record — re-running one would overwrite hand-authored work — and throwaway `diag_*` scratch scripts, which exist to answer one question and are deleted once answered.
