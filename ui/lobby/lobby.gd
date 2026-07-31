@@ -133,5 +133,9 @@ func _refresh() -> void:
 		_status.text = "%s squad, team %d — %d in the lobby, empty slots stay empty" % [
 			Roster.squad_name(Roster.squad_of_slot(mine)),
 			Roster.team_of_slot(mine), filled]
+	var in_lobby := GameClient.phase == GameServer.Phase.LOBBY
+	_start_button.visible = in_lobby and GameClient.is_host()
 	_start_button.disabled = mine < 0
-	_start_button.visible = GameClient.phase == GameServer.Phase.LOBBY
+	if in_lobby and not GameClient.is_host():
+		_status.text += "
+waiting for the host to start"

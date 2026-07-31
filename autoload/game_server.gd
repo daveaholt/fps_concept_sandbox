@@ -12,6 +12,7 @@ const SPAWN_DISPERSAL_FALLBACK := 1.2
 
 enum Phase { LOBBY, PLAYING, RESULT }
 
+const HOST_PEER := 1
 const START_TICKETS := 25
 const RESULT_SECONDS := 8.0
 
@@ -236,6 +237,10 @@ func request_start() -> void:
 
 func handle_start_request(peer: int) -> void:
 	if not is_active or phase == Phase.PLAYING:
+		return
+	if peer != HOST_PEER:
+		push_warning("[server] REJECTED start from peer %d: only the host starts a match"
+			% peer)
 		return
 	if not roster.has_peer(peer):
 		push_warning("[server] REJECTED start from peer %d: holds no slot" % peer)

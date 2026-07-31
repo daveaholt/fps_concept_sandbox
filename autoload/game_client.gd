@@ -277,6 +277,10 @@ func request_start() -> void:
 		GameServer.request_start.rpc_id(1)
 
 
+func is_host() -> bool:
+	return get_peer_id() == GameServer.HOST_PEER
+
+
 func my_slot() -> int:
 	return roster.slot_of(get_peer_id())
 
