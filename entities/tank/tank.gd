@@ -52,12 +52,15 @@ signal destroyed(vehicle: Node)
 
 var owner_peer: int = 0
 var team: int = Roster.UNALIGNED
+@export var impact_tolerance: float = 7.0
+@export var impact_damage_scale: float = 4.0
 @export var wreck_blast_damage: float = 200.0
 @export var max_health: float = 500.0
 var health: float = 500.0
 var wrecked: bool = false
 var _damage_state: int = VehicleDamage.State.HEALTHY
 var _spawn_transform := Transform3D()
+var _last_velocity := Vector3.ZERO
 var _live_collision_layer: int = 4
 var _entry_shape: CollisionShape3D
 
@@ -431,6 +434,21 @@ func blast_damage() -> float:
 	return wreck_blast_damage
 
 
+func impact_speed() -> float:
+	return (linear_velocity - _last_velocity).length()
+
+
+func _track_impact() -> void:
+	var change := impact_speed()
+	_last_velocity = linear_velocity
+	if wrecked or change <= impact_tolerance:
+		return
+	var excess := change - impact_tolerance
+	var damage := excess * excess * impact_damage_scale
+	print("[impact] %s hit at %.1f m/s of change, %.0f damage" % [name, change, damage])
+	apply_damage(damage)
+
+
 func is_alive() -> bool:
 	return not wrecked and health > 0.0
 
@@ -486,6 +504,7 @@ func revive() -> void:
 	global_transform = _spawn_transform
 	linear_velocity = Vector3.ZERO
 	angular_velocity = Vector3.ZERO
+	_last_velocity = Vector3.ZERO
 
 
 func _next_command(seat: int = Seats.DRIVER) -> InputCommand:
@@ -501,6 +520,7 @@ func _physics_process(delta: float) -> void:
 	if not _server_authority:
 		return
 
+	_track_impact()
 	var cmd := _next_command()
 	var driving := owner_peer != 0
 	var throttle := cmd.move.y if driving else 0.0

@@ -72,7 +72,7 @@ In a vehicle (`E` enters, `F` / `B` exits, `C` / `A` switches seat):
 | Heli pilot | `WASD` cyclic, `Q` `E` pedals, `Space` / `Ctrl` collective, `LMB` fires rockets | Right stick · Left stick X · `RT` / `LT` collective · `RB` |
 | Either gunner | `LMB` fires, `RMB` zooms | `RT` / `LT` |
 
-Hits on a damageable target flash a marker around your reticle — white for a hit, red and wider for a kill. Vehicles degrade as they take damage — slower, worse traverse, visibly darker, and smoking from half health. At zero hull they explode, take their crew with them, and vanish for 10 seconds before returning.
+Hits on a damageable target flash a marker around your reticle — white for a hit, red and wider for a kill. Vehicles degrade as they take damage — slower, worse traverse, visibly darker, and smoking from half health. Ramming and hard landings hurt too — past a per-vehicle tolerance the excess speed is squared, so a scrape is free and a 40 m fall is fatal. At zero hull they explode, take their crew with them, and vanish for 10 seconds before returning.
 
 The tank's gun sight draws a small hull indicator around the reticle — two track lines and a nose chevron that rotate with the hull relative to your view, since the hull itself is culled from that view.
 
