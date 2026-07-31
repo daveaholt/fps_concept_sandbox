@@ -36,6 +36,8 @@ var deploy_map_open: bool = false
 var was_killed: bool = false
 var _pending_auth: Dictionary = {}
 var _pending_auth_tick: int = 0
+var death_cam: DeathCam = null
+var _death_hold: float = 0.0
 
 
 func _ready() -> void:
@@ -79,6 +81,10 @@ func _start_local_systems() -> void:
 	var zoom := GunnerZoom.new()
 	zoom.name = "GunnerZoom"
 	add_child(zoom)
+
+	death_cam = DeathCam.new()
+	death_cam.name = "DeathCam"
+	add_child(death_cam)
 
 	window = WindowMode.new()
 	window.name = "WindowMode"
@@ -135,6 +141,7 @@ func is_predicting() -> bool:
 
 
 func _physics_process(delta: float) -> void:
+	_tick_death_hold(delta)
 	if sampler == null or my_entity == null or not is_instance_valid(my_entity):
 		return
 
@@ -389,6 +396,8 @@ func set_my_entity(entity: Node) -> void:
 	my_entity = entity
 
 	prediction.clear()
+	if my_entity != null:
+		end_death_cam()
 	if my_entity != null and my_entity.has_method("possess"):
 		my_entity.possess()
 		was_killed = false
@@ -533,10 +542,34 @@ func on_hit_confirmed(damage: float, killed: bool, label: String) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func on_killed() -> void:
+func on_killed(died_at: Vector3 = Vector3.ZERO) -> void:
 	was_killed = true
+	var facing := 0.0
+	if sampler != null:
+		facing = sampler.yaw
 	set_my_entity(null)
+	if death_cam == null or died_at.is_equal_approx(Vector3.ZERO):
+		set_deploy_map(true)
+		return
+	death_cam.begin(died_at, facing)
+	_death_hold = GameServer.DEATH_CAM_SECONDS
+
+
+func _tick_death_hold(delta: float) -> void:
+	if _death_hold <= 0.0:
+		return
+	_death_hold = maxf(0.0, _death_hold - delta)
+	if _death_hold > 0.0:
+		return
+	if death_cam != null:
+		death_cam.stop()
 	set_deploy_map(true)
+
+
+func end_death_cam() -> void:
+	_death_hold = 0.0
+	if death_cam != null:
+		death_cam.stop()
 
 
 func close_deploy_map() -> void:

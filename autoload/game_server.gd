@@ -1,7 +1,7 @@
 extends Node
 
 const PLAYER_SCENE_PATH := "res://entities/player/player.tscn"
-const RESPAWN_DELAY := 2.0
+const DEATH_CAM_SECONDS := 2.5
 const MAX_BUFFERED_COMMANDS := 16
 const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
@@ -42,6 +42,7 @@ var _spawn_tuning_cache: InfantryTuning = null
 var ballistics: BallisticsManager = null
 var _vehicles: Array = []
 var _wrecks: Array = []
+var _corpses: Array = []
 
 
 func _ready() -> void:
@@ -410,7 +411,7 @@ func _bind(peer_id: int, entity: Node) -> void:
 	possession_granted.emit(peer_id, entity)
 
 
-func _release_peer(peer_id: int) -> void:
+func _release_peer(peer_id: int, keep_body: bool = false) -> void:
 	var entity: Node = _possession.get(peer_id)
 	if entity != null and is_instance_valid(entity):
 		if entity.is_in_group("vehicle"):
@@ -421,7 +422,10 @@ func _release_peer(peer_id: int) -> void:
 		else:
 			if ballistics != null:
 				ballistics.unregister_target(entity)
-			entity.queue_free()
+			if keep_body:
+				_corpses.append({"body": entity, "seconds": DEATH_CAM_SECONDS})
+			else:
+				entity.queue_free()
 	_possession.erase(peer_id)
 	_inputs.erase(peer_id)
 	_last_processed.erase(peer_id)
@@ -703,6 +707,7 @@ func _physics_process(_delta: float) -> void:
 	tick += 1
 	_feed_commands()
 	_tick_wrecks(_delta)
+	_tick_corpses(_delta)
 
 
 func _feed_commands() -> void:
@@ -774,13 +779,33 @@ func entity_died(entity: Node) -> void:
 func _kill_occupant(peer_id: int) -> void:
 	if peer_id == 0:
 		return
+	var entity: Node = _possession.get(peer_id)
+	var died_at := Vector3.ZERO
+	if entity != null and is_instance_valid(entity) and entity is Node3D:
+		died_at = (entity as Node3D).global_position
 	_spend_ticket(roster.team_of(peer_id))
-	_release_peer(peer_id)
+	_release_peer(peer_id, true)
 	possession_granted.emit(peer_id, null)
 	if peer_id == 1:
-		GameClient.on_killed()
+		GameClient.on_killed(died_at)
 	elif multiplayer.get_peers().has(peer_id):
-		GameClient.on_killed.rpc_id(peer_id)
+		GameClient.on_killed.rpc_id(peer_id, died_at)
+
+
+func _tick_corpses(delta: float) -> void:
+	if _corpses.is_empty():
+		return
+	var waiting: Array = []
+	for entry in _corpses:
+		var body: Node = entry["body"]
+		if not is_instance_valid(body):
+			continue
+		entry["seconds"] = float(entry["seconds"]) - delta
+		if float(entry["seconds"]) > 0.0:
+			waiting.append(entry)
+		else:
+			body.queue_free()
+	_corpses = waiting
 
 
 func _on_vehicle_destroyed(vehicle: Node) -> void:
@@ -806,6 +831,8 @@ func _tick_wrecks(delta: float) -> void:
 			continue
 		entry["seconds"] = float(entry["seconds"]) - delta
 		if float(entry["seconds"]) > 0.0:
+			if float(entry["seconds"]) <= VEHICLE_RESPAWN_SECONDS - DEATH_CAM_SECONDS:
+				vehicle.hide_wreck()
 			still_down.append(entry)
 			continue
 		vehicle.revive()

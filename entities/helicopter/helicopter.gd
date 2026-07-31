@@ -51,6 +51,7 @@ var team: int = Roster.UNALIGNED
 @export var max_health: float = 350.0
 var health: float = 350.0
 var wrecked: bool = false
+var wreck_shown: bool = false
 var _damage_state: int = VehicleDamage.State.HEALTHY
 var _spawn_transform := Transform3D()
 var _last_velocity := Vector3.ZERO
@@ -395,6 +396,7 @@ func get_net_state() -> Dictionary:
 		"o": owner_peer,
 		"hp": health,
 		"wk": wrecked,
+		"ws": wreck_shown,
 		"st": seats.to_array(),
 	}
 
@@ -415,6 +417,7 @@ func apply_replicated_state(net_state: Dictionary) -> void:
 	owner_peer = net_state.get("o", owner_peer)
 	health = net_state.get("hp", health)
 	wrecked = net_state.get("wk", wrecked)
+	wreck_shown = net_state.get("ws", wreck_shown)
 	refresh_damage_state()
 	var wire: Array = net_state.get("st", [])
 	if not wire.is_empty():
@@ -502,8 +505,15 @@ func refresh_damage_state() -> void:
 	_sync_wreck_presence()
 
 
+func hide_wreck() -> void:
+	if not wreck_shown:
+		return
+	wreck_shown = false
+	_sync_wreck_presence()
+
+
 func _sync_wreck_presence() -> void:
-	visible = not wrecked
+	visible = not wrecked or wreck_shown
 	var layer := 0 if wrecked else _live_collision_layer
 	collision_layer = layer
 	if _entry_shape != null:
@@ -516,6 +526,7 @@ func kill_label() -> String:
 
 func enter_wreck() -> void:
 	wrecked = true
+	wreck_shown = true
 	health = 0.0
 	refresh_damage_state()
 	for peer in seats.occupants():
@@ -525,6 +536,7 @@ func enter_wreck() -> void:
 
 func revive() -> void:
 	wrecked = false
+	wreck_shown = false
 	health = max_health
 	refresh_damage_state()
 	global_transform = _spawn_transform
