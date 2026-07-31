@@ -1,7 +1,7 @@
 class_name BallisticsManager
 extends Node3D
 
-signal hit_confirmed(shooter_peer: int, damage: float, killed: bool)
+signal hit_confirmed(shooter_peer: int, damage: float, killed: bool, label: String)
 
 const MAX_PROJECTILES := 512
 const WORLD_MASK := 1
@@ -216,7 +216,8 @@ func _on_impact(projectile: Dictionary, impact: Dictionary, params: ProjectilePa
 		var was_alive := _target_alive(target)
 		target.apply_damage(damage)
 		var killed := was_alive and not _target_alive(target)
-		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage, killed)
+		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage, killed,
+			_kill_label(target, killed))
 		if killed:
 			_detonate_wreck(target, projectile)
 
@@ -253,7 +254,8 @@ func damage_in_radius(point: Vector3, radius: float, full_damage: float, exclude
 		var was_alive := _target_alive(candidate)
 		candidate.apply_damage(damage)
 		var killed := was_alive and not _target_alive(candidate)
-		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage, killed)
+		hit_confirmed.emit(int(projectile.get("shooter", 0)), damage, killed,
+			_kill_label(candidate, killed))
 		if killed:
 			_detonate_wreck(candidate, projectile)
 	return caught
@@ -269,6 +271,12 @@ func _detonate_wreck(target, projectile: Dictionary) -> void:
 	print("[wreck] %s detonates: %.1f damage over %.1f m" % [target.name, damage, radius])
 	damage_in_radius((target as Node3D).global_position, radius, damage, target,
 		projectile, "wreck")
+
+
+func _kill_label(target, killed: bool) -> String:
+	if not killed or target == null or not target.has_method("kill_label"):
+		return ""
+	return target.kill_label()
 
 
 func _target_alive(target) -> bool:

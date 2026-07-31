@@ -5,7 +5,7 @@ const RESPAWN_DELAY := 2.0
 const MAX_BUFFERED_COMMANDS := 16
 const ENTER_RANGE := 4.0
 const SPAWN_SPREAD := 2.2
-const VEHICLE_RESPAWN_SECONDS := 20.0
+const VEHICLE_RESPAWN_SECONDS := 10.0
 const SPAWN_DISPERSAL_RADIUS := 4.5
 const SPAWN_DISPERSAL_TRIES := 12
 const SPAWN_DISPERSAL_FALLBACK := 1.2
@@ -813,12 +813,13 @@ func _tick_wrecks(delta: float) -> void:
 	_wrecks = still_down
 
 
-func _on_hit_confirmed(shooter_peer: int, damage: float, killed: bool) -> void:
+func _on_hit_confirmed(shooter_peer: int, damage: float, killed: bool,
+		label: String) -> void:
 	if shooter_peer == 0:
 		return
 	if shooter_peer == 1:
-		GameClient.on_hit_confirmed(damage, killed)
+		GameClient.on_hit_confirmed(damage, killed, label)
 	elif multiplayer.multiplayer_peer != null and multiplayer.get_peers().has(shooter_peer):
-		GameClient.on_hit_confirmed.rpc_id(shooter_peer, damage, killed)
+		GameClient.on_hit_confirmed.rpc_id(shooter_peer, damage, killed, label)
 
 

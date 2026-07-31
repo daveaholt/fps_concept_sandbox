@@ -58,6 +58,8 @@ var health: float = 500.0
 var wrecked: bool = false
 var _damage_state: int = VehicleDamage.State.HEALTHY
 var _spawn_transform := Transform3D()
+var _live_collision_layer: int = 4
+var _entry_shape: CollisionShape3D
 
 var _common: VehicleCommon
 var _turret_yaw: Node3D
@@ -107,12 +109,14 @@ func _ready() -> void:
 
 	health = max_health
 	_spawn_transform = global_transform
+	_live_collision_layer = collision_layer
 	_init_gunner()
 	add_to_group("controllable")
 	add_to_group("vehicle")
 	add_to_group("tank")
 
 	_common = get_node_or_null("VehicleCommon")
+	_entry_shape = get_node_or_null("VehicleCommon/EntryZone/Shape")
 	_turret_yaw = get_node_or_null("TurretYaw")
 	_cannon_pitch = get_node_or_null("TurretYaw/CannonPitch")
 	_muzzle = get_node_or_null("TurretYaw/CannonPitch/Muzzle")
@@ -447,12 +451,22 @@ func mobility() -> float:
 
 
 func refresh_damage_state() -> void:
-	var next: int = VehicleDamage.State.DESTROYED if wrecked 		else VehicleDamage.state_for(health_fraction())
-	if next == _damage_state:
-		return
-	_damage_state = next
+	_damage_state = VehicleDamage.State.DESTROYED if wrecked 		else VehicleDamage.state_for(health_fraction())
 	if _common != null:
-		_common.apply_damage_tint(_damage_state)
+		_common.set_damage_state(_damage_state)
+	_sync_wreck_presence()
+
+
+func _sync_wreck_presence() -> void:
+	visible = not wrecked
+	var layer := 0 if wrecked else _live_collision_layer
+	collision_layer = layer
+	if _entry_shape != null:
+		_entry_shape.disabled = wrecked
+
+
+func kill_label() -> String:
+	return "%s DESTROYED" % get_display_name().to_upper()
 
 
 func enter_wreck() -> void:

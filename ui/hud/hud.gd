@@ -1,6 +1,7 @@
 extends Control
 
 const RETICLE_RANGE := 150.0
+const BANNER_SECONDS := 2.4
 
 var _entity: Node = null
 
@@ -16,6 +17,8 @@ var _result_label: Label
 var _controls_label: Label
 var _hull_indicator: HullIndicator
 var _hit_marker: HitMarker
+var _kill_banner: Label
+var _banner_left: float = 0.0
 
 
 func _ready() -> void:
@@ -54,6 +57,21 @@ func _ready() -> void:
 	_hit_marker = HitMarker.new()
 	_hit_marker.name = "HitMarker"
 	add_child(_hit_marker)
+
+	_kill_banner = Label.new()
+	_kill_banner.name = "KillBanner"
+	_kill_banner.set_anchors_preset(Control.PRESET_CENTER)
+	_kill_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_kill_banner.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_kill_banner.position = Vector2(0.0, 74.0)
+	_kill_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_kill_banner.add_theme_font_size_override("font_size", 26)
+	_kill_banner.add_theme_color_override("font_color", Color(1.0, 0.42, 0.32))
+	_kill_banner.add_theme_color_override("font_outline_color", Color.BLACK)
+	_kill_banner.add_theme_constant_override("outline_size", 6)
+	_kill_banner.visible = false
+	_kill_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_kill_banner)
 
 	EventBus.hit_confirmed.connect(_on_hit_confirmed)
 	EventBus.roster_changed.connect(_refresh_squad)
@@ -109,6 +127,7 @@ func _on_prompt(text: String) -> void:
 
 
 func _process(_delta: float) -> void:
+	_tick_banner(_delta)
 	if GameClient.phase == GameServer.Phase.RESULT:
 		visible = true
 		_refresh_tickets()
@@ -146,8 +165,22 @@ func _refresh_controls() -> void:
 	_controls_label.text = "   ·   ".join(hints)
 
 
-func _on_hit_confirmed(_damage: float, killed: bool) -> void:
+func _on_hit_confirmed(_damage: float, killed: bool, label: String) -> void:
 	_hit_marker.flash(killed)
+	if label == "":
+		return
+	_kill_banner.text = label
+	_kill_banner.visible = true
+	_banner_left = BANNER_SECONDS
+
+
+func _tick_banner(delta: float) -> void:
+	if _banner_left <= 0.0:
+		return
+	_banner_left = maxf(0.0, _banner_left - delta)
+	_kill_banner.modulate.a = clampf(_banner_left / 0.6, 0.0, 1.0)
+	if _banner_left <= 0.0:
+		_kill_banner.visible = false
 
 
 func _refresh_hull_indicator() -> void:

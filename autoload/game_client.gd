@@ -528,8 +528,8 @@ func is_alive() -> bool:
 
 
 @rpc("authority", "call_remote", "unreliable")
-func on_hit_confirmed(damage: float, killed: bool) -> void:
-	EventBus.hit_confirmed.emit(damage, killed)
+func on_hit_confirmed(damage: float, killed: bool, label: String) -> void:
+	EventBus.hit_confirmed.emit(damage, killed, label)
 
 
 @rpc("authority", "call_remote", "reliable")

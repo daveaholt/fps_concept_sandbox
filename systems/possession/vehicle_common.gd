@@ -13,6 +13,8 @@ var _shell_hidden: bool = false
 var _shell_bounds := AABB()
 var _tinted: Array[StandardMaterial3D] = []
 var _base_albedo: Array[Color] = []
+var _smoke: GPUParticles3D
+var _shown_state: int = -1
 
 
 func _ready() -> void:
@@ -23,6 +25,7 @@ func _ready() -> void:
 		_entry_zone.add_to_group(ENTRY_GROUP)
 	_collect_shell()
 	_cache_materials()
+	_build_smoke()
 
 
 func _cache_materials() -> void:
@@ -37,6 +40,59 @@ func _cache_materials() -> void:
 		mesh.material_override = copy
 		_tinted.append(copy)
 		_base_albedo.append(copy.albedo_color)
+
+
+func _build_smoke() -> void:
+	_smoke = GPUParticles3D.new()
+	_smoke.name = "DamageSmoke"
+	_smoke.emitting = false
+	_smoke.amount = 20
+	_smoke.lifetime = 2.4
+	_smoke.local_coords = false
+	_smoke.visibility_aabb = AABB(Vector3(-8.0, -2.0, -8.0), Vector3(16.0, 18.0, 16.0))
+
+	var process := ParticleProcessMaterial.new()
+	process.direction = Vector3.UP
+	process.spread = 14.0
+	process.initial_velocity_min = 1.1
+	process.initial_velocity_max = 2.8
+	process.gravity = Vector3(0.0, 1.2, 0.0)
+	process.scale_min = 0.6
+	process.scale_max = 1.8
+	process.color = Color(0.09, 0.09, 0.1, 0.55)
+	_smoke.process_material = process
+
+	var puff := QuadMesh.new()
+	puff.size = Vector2(1.3, 1.3)
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	material.vertex_color_use_as_albedo = true
+	material.albedo_color = Color(0.1, 0.1, 0.11, 0.6)
+	puff.material = material
+	_smoke.draw_pass_1 = puff
+
+	add_child(_smoke)
+	if _shell_bounds.size != Vector3.ZERO:
+		_smoke.position = Vector3(_shell_bounds.get_center().x,
+			_shell_bounds.position.y + _shell_bounds.size.y * 0.8,
+			_shell_bounds.get_center().z)
+
+
+func set_damage_state(state: int) -> void:
+	if state == _shown_state:
+		return
+	_shown_state = state
+	apply_damage_tint(state)
+	if _smoke == null:
+		return
+	_smoke.emitting = state == VehicleDamage.State.DAMAGED 		or state == VehicleDamage.State.CRITICAL
+	_smoke.amount = 34 if state == VehicleDamage.State.CRITICAL else 16
+
+
+func smoking() -> bool:
+	return _smoke != null and _smoke.emitting
 
 
 func apply_damage_tint(state: int) -> void:
