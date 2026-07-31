@@ -8,6 +8,7 @@ extends Resource
 @export var base_damage: float = 25.0
 @export var max_lifetime: float = 4.0
 @export var damage_floor: float = 0.3
+@export var explosive: bool = false
 @export var splash_radius: float = 0.0
 @export var splash_damage: float = 0.0
 @export var tracer_length: float = 6.0

@@ -391,7 +391,8 @@ func hit_centre_y() -> float:
 	return 0.775
 
 
-func resolve_sector(world_point: Vector3) -> Dictionary:
+func resolve_sector(world_point: Vector3,
+		_params: ProjectileParams = null) -> Dictionary:
 	var local := global_transform.affine_inverse() * world_point
 	if local.y > deck_height:
 		return {"sector": "top", "multiplier": armour_top}

@@ -45,6 +45,7 @@ const GUNNER_SEAT := 1
 var owner_peer: int = 0
 var team: int = Roster.UNALIGNED
 @export var wreck_blast_damage: float = 200.0
+@export var explosive_vulnerability: float = 1.6
 @export var max_health: float = 350.0
 var health: float = 350.0
 var wrecked: bool = false
@@ -432,7 +433,10 @@ func hit_centre_y() -> float:
 	return 1.3
 
 
-func resolve_sector(_world_point: Vector3) -> Dictionary:
+func resolve_sector(_world_point: Vector3,
+		params: ProjectileParams = null) -> Dictionary:
+	if params != null and params.explosive:
+		return {"sector": "airframe", "multiplier": explosive_vulnerability}
 	return {"sector": "hull", "multiplier": 1.0}
 
 

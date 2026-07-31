@@ -56,7 +56,7 @@ Tank
 
 Turret *chases* the camera aim direction at finite `turret_speed` (60°/s yaw, 30°/s pitch) rather than snapping — this is most of what makes a tank feel heavy. Crosshair shows both camera aim point and a second dim marker for where the barrel currently points; they converge when the turret catches up.
 
-**Firing:** LMB fires a shell through the shared `BallisticsManager` (11) from `Muzzle` — 180 m/s, gravity + drag, big tracer streak, **400 direct damage** (floor 0.9) + 4 m splash (server overlap query at impact). No RigidBody shell exists. `fire_cooldown = 2.5 s` with HUD reload pip. Applies a small impulse kick to the hull opposite the shot because it's free and feels great.
+**Firing:** LMB fires a shell through the shared `BallisticsManager` (11) from `Muzzle` — 180 m/s, gravity + drag, big tracer streak, **245 direct damage** (floor 0.92, `explosive`) + 4 m splash (server overlap query at impact). No RigidBody shell exists. `fire_cooldown = 2.5 s` with HUD reload pip. Applies a small impulse kick to the hull opposite the shot because it's free and feels great.
 
 ## Armor sectors
 

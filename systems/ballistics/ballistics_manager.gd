@@ -117,6 +117,7 @@ func _rewind_offset(projectile: Dictionary) -> float:
 func _trace(from: Vector3, to: Vector3, projectile: Dictionary, now: float) -> Dictionary:
 	var best_t := 2.0
 	var best := {}
+	var params := params_for(int(projectile.get("params_id", 0)))
 
 	var space := get_world_3d().direct_space_state
 	var ray := PhysicsRayQueryParameters3D.create(from, to)
@@ -133,7 +134,7 @@ func _trace(from: Vector3, to: Vector3, projectile: Dictionary, now: float) -> D
 	for target in _targets:
 		if not is_instance_valid(target) or target.owner_peer == int(projectile["shooter"]):
 			continue
-		var hit := _trace_entity(from, to, target, sample_time)
+		var hit := _trace_entity(from, to, target, sample_time, params)
 		if hit.is_empty():
 			continue
 		if float(hit["t"]) < best_t:
@@ -151,9 +152,10 @@ func _target_rids() -> Array[RID]:
 	return rids
 
 
-func _trace_entity(from: Vector3, to: Vector3, target: Node, sample_time: float) -> Dictionary:
+func _trace_entity(from: Vector3, to: Vector3, target: Node, sample_time: float,
+		params: ProjectileParams = null) -> Dictionary:
 	if target.has_method("resolve_sector"):
-		return _trace_hull(from, to, target)
+		return _trace_hull(from, to, target, params)
 
 	var history: PositionHistory = target.get_history()
 	var snap := history.sample(sample_time)
@@ -184,7 +186,8 @@ func _trace_entity(from: Vector3, to: Vector3, target: Node, sample_time: float)
 	}
 
 
-func _trace_hull(from: Vector3, to: Vector3, target: Node) -> Dictionary:
+func _trace_hull(from: Vector3, to: Vector3, target: Node,
+		params: ProjectileParams = null) -> Dictionary:
 	var inverse := (target as Node3D).global_transform.affine_inverse()
 	var centre := Vector3(0.0, target.hit_centre_y(), 0.0)
 	var t := Ballistics.segment_hits_box(inverse * from, inverse * to, centre, target.hit_half_extents())
@@ -192,7 +195,7 @@ func _trace_hull(from: Vector3, to: Vector3, target: Node) -> Dictionary:
 		return {}
 
 	var point := from.lerp(to, t)
-	var sector: Dictionary = target.resolve_sector(point)
+	var sector: Dictionary = target.resolve_sector(point, params)
 	return {
 		"t": t,
 		"point": point,
