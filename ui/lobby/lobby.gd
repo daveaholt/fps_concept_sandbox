@@ -63,6 +63,7 @@ func _build() -> void:
 	_start_button = Button.new()
 	_start_button.text = "START"
 	_start_button.custom_minimum_size = Vector2(220, 46)
+	_start_button.focus_mode = Control.FOCUS_NONE
 	_start_button.pressed.connect(_on_start)
 	root_box.add_child(_start_button)
 
@@ -81,6 +82,7 @@ func _build_squad(squad: int) -> VBoxContainer:
 		var slot := squad * Roster.SQUAD_SIZE + seat
 		var button := Button.new()
 		button.custom_minimum_size = Vector2(SLOT_MIN_WIDTH, SLOT_HEIGHT)
+		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(_on_slot_pressed.bind(slot))
 		box.add_child(button)
 		_slot_buttons.append(button)

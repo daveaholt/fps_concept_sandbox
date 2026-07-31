@@ -40,6 +40,7 @@ func _ready() -> void:
 	_reticle = DeployReticle.new()
 	_reticle.name = "Reticle"
 	_marker_layer.add_child(_reticle)
+	_deploy_button.focus_mode = Control.FOCUS_NONE
 	_deploy_button.pressed.connect(_on_deploy_pressed)
 	EventBus.deploy_map_toggled.connect(_on_toggled)
 
@@ -53,7 +54,13 @@ func _on_toggled(open: bool) -> void:
 		_refresh()
 
 
+func may_act() -> bool:
+	return InputFocus.may_act(GameClient.sampler)
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if not may_act():
+		return
 	if event.is_action_pressed("toggle_deploy_map"):
 		GameClient.request_deploy_map(not GameClient.deploy_map_open)
 		get_viewport().set_input_as_handled()
@@ -82,6 +89,7 @@ func _build_markers() -> void:
 		button.custom_minimum_size = MARKER_SIZE
 		button.size = MARKER_SIZE
 		button.disabled = not point.enabled
+		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(_on_marker_pressed.bind(point))
 		_marker_layer.add_child(button)
 		_markers[point] = button
@@ -91,6 +99,7 @@ func _build_markers() -> void:
 		var button := Button.new()
 		button.custom_minimum_size = MARKER_SIZE
 		button.size = MARKER_SIZE
+		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(_on_mate_pressed.bind(mate))
 		_marker_layer.add_child(button)
 		_mate_markers[mate] = button
@@ -148,7 +157,7 @@ func nav_vector() -> Vector2:
 
 
 func _poll_navigation() -> void:
-	if not InputFocus.may_act(GameClient.sampler):
+	if not may_act():
 		_nav_latched = false
 		return
 	var nav := nav_vector()

@@ -38,6 +38,7 @@ func _build() -> void:
 	var host := Button.new()
 	host.text = "HOST"
 	host.custom_minimum_size = Vector2(260, 46)
+	host.focus_mode = Control.FOCUS_NONE
 	host.pressed.connect(_on_host)
 	_buttons.add_child(host)
 
@@ -48,6 +49,7 @@ func _build() -> void:
 	var join := Button.new()
 	join.text = "JOIN"
 	join.custom_minimum_size = Vector2(120, 46)
+	join.focus_mode = Control.FOCUS_NONE
 	join.pressed.connect(_on_join)
 	join_row.add_child(join)
 
@@ -59,6 +61,7 @@ func _build() -> void:
 	var quit := Button.new()
 	quit.text = "QUIT"
 	quit.custom_minimum_size = Vector2(260, 46)
+	quit.focus_mode = Control.FOCUS_NONE
 	quit.pressed.connect(_on_quit)
 	_buttons.add_child(quit)
 
