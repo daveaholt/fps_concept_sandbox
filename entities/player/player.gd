@@ -158,6 +158,8 @@ func get_net_state() -> Dictionary:
 		"sp": state.switch_progress,
 		"fc": state.fire_cooldown,
 		"pb": state.prev_buttons,
+		"o": owner_peer,
+		"t": team,
 	}
 
 
@@ -199,6 +201,8 @@ func apply_replicated_state(net_state: Dictionary) -> void:
 	state.health = net_state.get("h", state.health)
 	state.shots_fired = net_state.get("s", state.shots_fired)
 	_aim = net_state.get("a", _aim)
+	owner_peer = net_state.get("o", owner_peer)
+	team = net_state.get("t", team)
 	global_position = state.position
 
 

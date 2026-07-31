@@ -276,6 +276,13 @@ func request_slot(slot: int, chosen_name: String = "") -> void:
 		GameServer.request_slot.rpc_id(1, slot, chosen_name)
 
 
+func request_name(chosen_name: String) -> void:
+	if GameServer.is_active:
+		GameServer.handle_name_request(get_peer_id(), chosen_name)
+	elif can_rpc():
+		GameServer.request_name.rpc_id(1, chosen_name)
+
+
 func request_start() -> void:
 	if GameServer.is_active:
 		GameServer.handle_start_request(get_peer_id())

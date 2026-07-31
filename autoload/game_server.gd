@@ -236,6 +236,24 @@ func request_start() -> void:
 		handle_start_request(multiplayer.get_remote_sender_id())
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func request_name(chosen_name: String) -> void:
+	if is_active:
+		handle_name_request(multiplayer.get_remote_sender_id(), chosen_name)
+
+
+func handle_name_request(peer: int, chosen_name: String) -> void:
+	if not is_active:
+		return
+	var slot := roster.slot_of(peer)
+	if slot < 0:
+		return
+	if roster.name_of_slot(slot) == Roster.sanitise_name(chosen_name):
+		return
+	roster.set_slot_name(slot, chosen_name)
+	_broadcast_roster()
+
+
 func handle_start_request(peer: int) -> void:
 	if not is_active or phase == Phase.PLAYING:
 		return

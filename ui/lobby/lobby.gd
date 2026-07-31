@@ -7,6 +7,7 @@ var _slot_buttons: Array[Button] = []
 var _start_button: Button
 var _status: Label
 var _name_field: LineEdit
+var _name_settle: float = 0.0
 
 
 func _ready() -> void:
@@ -49,6 +50,8 @@ func _build() -> void:
 	_name_field.max_length = Roster.NAME_MAX_LENGTH
 	_name_field.custom_minimum_size = Vector2(200, 38)
 	_name_field.placeholder_text = "leave blank for a default"
+	_name_field.text_changed.connect(_on_name_typed)
+	_name_field.text_submitted.connect(_on_name_submitted)
 	name_row.add_child(_name_field)
 
 	var teams := HBoxContainer.new()
@@ -113,7 +116,29 @@ func _on_start() -> void:
 	GameClient.request_start()
 
 
-func _process(_delta: float) -> void:
+const NAME_SETTLE_SECONDS := 0.45
+
+
+func _on_name_typed(_text: String) -> void:
+	_name_settle = NAME_SETTLE_SECONDS
+
+
+func _on_name_submitted(_text: String) -> void:
+	_name_settle = 0.0
+	_push_name()
+
+
+func _push_name() -> void:
+	if GameClient.my_slot() >= 0:
+		GameClient.request_name(_name_field.text)
+
+
+func _process(delta: float) -> void:
+	if _name_settle > 0.0:
+		_name_settle = maxf(0.0, _name_settle - delta)
+		if _name_settle <= 0.0:
+			_push_name()
+
 	var want := GameClient.is_active and (GameClient.phase == GameServer.Phase.LOBBY
 		or GameClient.my_slot() < 0)
 	if visible != want:
