@@ -153,7 +153,8 @@ Each milestone ends playable and is tagged in git. Full acceptance gates are in 
 | M4 | Deploy map + death loop | **Done** (`m4`) |
 | M5 | Vehicle framework + tank | **Done** (`m5`) |
 | M6 | Helicopter | **Done** (`m6`) |
-| M7 | Sandbox polish pass | **Next** |
+| M7 | Sandbox polish pass | **In progress** — see `docs/08_milestones.md` |
+| MH | Hosted friend test | Deferred behind M7 |
 | MH | Hosted friend test (auth handshake + Azure server) | Deferred until there is something worth inviting people to |
 
 ### Current scaffolding

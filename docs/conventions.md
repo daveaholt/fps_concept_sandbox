@@ -51,4 +51,22 @@ Use the `_console` build when you need stdout; the plain `.exe` swallows it.
 
 ## Status
 
-Current milestone status is the table in `README.md`. **M6 is closed** (tag `m6`) — both halves of its gate are met: the 06 acceptance criteria pass headlessly, and the 100 ms interpolated-flight verdict is flown and recorded in 06 and 10. **M7** (polish and feature set) is next. **MH** (hosted friend test) is deferred behind it — the Azure VM is a running cost and is not worth paying until there is something worth inviting people to.
+Current milestone status is the table in `README.md`. **M6 is closed** (tag `m6`). **M7 is in progress and open-ended** — it has no gate, so it ends when the owner says so rather than when a checklist passes. `08_milestones.md` carries the running done/backlog split and is the file to read first when picking the project up again. **MH** (hosted friend test) is deferred behind M7 — the Azure VM is a running cost and is not worth paying until there is something worth inviting people to.
+
+### Verification harness
+
+There is no test framework. Verification is a folder of standalone `--script` suites, each a `SceneTree` that loads the sandbox level, asserts, prints `PASS`/`FAIL` lines and quits non-zero on failure. Run one:
+
+```
+godot --headless --path . --script res://tools/verify_bots.gd
+```
+
+Run all of them and count failures:
+
+```
+for f in tools/verify_*.gd; do
+  godot --headless --path . --script "res://$f" | grep -E "^FAIL|^ *FAIL"
+done
+```
+
+`verify_fullscreen.gd` fails headlessly by design — it asserts window-mode changes that need a real window. Everything else should pass.
