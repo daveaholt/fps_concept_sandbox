@@ -9,3 +9,6 @@ fire_mode = 1
 rpm = 450.0
 draw_time = 0.3
 ballistics_params = "pistol"
+magazine_size = 12
+starting_reserve = 60
+reload_time = 1.5

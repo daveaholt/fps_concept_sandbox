@@ -12,6 +12,7 @@ const WEAPON_PRIMARY := 1 << 7
 const WEAPON_SECONDARY := 1 << 8
 const WEAPON_CYCLE_UP := 1 << 9
 const WEAPON_CYCLE_DOWN := 1 << 10
+const RELOAD := 1 << 11
 
 var tick: int = 0
 var move: Vector2 = Vector2.ZERO

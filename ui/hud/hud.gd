@@ -243,8 +243,13 @@ func _infantry_panel() -> void:
 	_health_label.text = "HP %d" % roundi(state.health)
 
 	var weapon: WeaponDef = _entity.get_active_weapon()
-	var slot := state.weapon_index + 1
-	_weapon_label.text = "%d · %s" % [slot, weapon.display_name] if weapon != null else "—"
+	if weapon == null:
+		_weapon_label.text = "—"
+	elif state.reloading():
+		_weapon_label.text = "%s   reloading" % weapon.display_name
+	else:
+		_weapon_label.text = "%s   %d / %d" % [weapon.display_name,
+			state.loaded(state.weapon_index), state.spare(state.weapon_index)]
 
 	var drawing := state.switch_progress < 1.0
 	_draw_bar.visible = drawing

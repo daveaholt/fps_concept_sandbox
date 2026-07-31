@@ -87,6 +87,10 @@ static func _step_weapons(s: InfantryState, cmd: InputCommand, tuning: InfantryT
 	if desired != s.weapon_index:
 		s.weapon_index = desired
 		s.switch_progress = 0.0
+		s.reload_timer = 0.0
+
+	if s.magazine.size() != tuning.weapons.size():
+		s.arm(tuning)
 
 	var weapon := tuning.weapon_at(s.weapon_index)
 	if s.switch_progress < 1.0:
@@ -95,7 +99,16 @@ static func _step_weapons(s: InfantryState, cmd: InputCommand, tuning: InfantryT
 
 	s.fire_cooldown = maxf(0.0, s.fire_cooldown - delta)
 
-	if weapon == null or s.switch_progress < 1.0 or s.fire_cooldown > 0.0:
+	if weapon == null:
+		return
+
+	if s.reload_timer > 0.0:
+		s.reload_timer = maxf(0.0, s.reload_timer - delta)
+		if s.reload_timer <= 0.0:
+			_finish_reload(s, weapon)
+		return
+
+	if s.switch_progress < 1.0:
 		return
 
 	var wants_shot := false
@@ -104,9 +117,35 @@ static func _step_weapons(s: InfantryState, cmd: InputCommand, tuning: InfantryT
 	else:
 		wants_shot = (pressed & InputCommand.FIRE) != 0
 
-	if wants_shot:
-		s.shots_fired += 1
-		s.fire_cooldown = weapon.seconds_per_shot()
+	var empty := s.loaded(s.weapon_index) <= 0
+	if (pressed & InputCommand.RELOAD) != 0 or (wants_shot and empty):
+		_begin_reload(s, weapon)
+		return
+
+	if s.fire_cooldown > 0.0 or empty or not wants_shot:
+		return
+
+	s.magazine[s.weapon_index] -= 1
+	s.shots_fired += 1
+	s.fire_cooldown = weapon.seconds_per_shot()
+
+
+static func _begin_reload(s: InfantryState, weapon: WeaponDef) -> void:
+	if s.loaded(s.weapon_index) >= weapon.magazine_size:
+		return
+	if s.spare(s.weapon_index) <= 0:
+		return
+	s.reload_timer = maxf(weapon.reload_time, 0.0001)
+
+
+static func _finish_reload(s: InfantryState, weapon: WeaponDef) -> void:
+	var index := s.weapon_index
+	var wanted: int = weapon.magazine_size - s.loaded(index)
+	var moved: int = mini(wanted, s.spare(index))
+	if moved <= 0:
+		return
+	s.magazine[index] += moved
+	s.reserve[index] -= moved
 
 
 static func _collide_and_slide(from: Vector3, motion: Vector3, tuning: InfantryTuning,

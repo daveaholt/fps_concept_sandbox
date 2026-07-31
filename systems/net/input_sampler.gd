@@ -197,6 +197,7 @@ func _button_mask() -> int:
 	if Input.is_action_pressed("sprint"): bits |= InputCommand.SPRINT
 	if Input.is_action_pressed(fire_action()): bits |= InputCommand.FIRE
 	if Input.is_action_pressed("interact"): bits |= InputCommand.INTERACT
+	if Input.is_action_pressed("reload"): bits |= InputCommand.RELOAD
 	if Input.is_action_pressed("exit_vehicle"): bits |= InputCommand.EXIT
 	if Input.is_action_pressed("brake"): bits |= InputCommand.BRAKE
 	if Input.is_action_pressed("toggle_engine"): bits |= InputCommand.ENGINE
