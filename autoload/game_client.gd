@@ -284,6 +284,13 @@ func request_name(chosen_name: String) -> void:
 		GameServer.request_name.rpc_id(1, chosen_name)
 
 
+func set_fill_bots(enabled: bool) -> void:
+	if GameServer.is_active:
+		GameServer.fill_bots = enabled
+	elif can_rpc():
+		GameServer.request_fill_bots.rpc_id(1, enabled)
+
+
 func request_start() -> void:
 	if GameServer.is_active:
 		GameServer.handle_start_request(get_peer_id())

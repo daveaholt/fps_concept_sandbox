@@ -5,6 +5,7 @@ const SLOT_HEIGHT := 40
 
 var _slot_buttons: Array[Button] = []
 var _start_button: Button
+var _bots_check: CheckBox
 var _status: Label
 var _name_field: LineEdit
 var _name_settle: float = 0.0
@@ -79,6 +80,13 @@ func _build() -> void:
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root_box.add_child(_status)
 
+	_bots_check = CheckBox.new()
+	_bots_check.text = "fill empty slots with bots"
+	_bots_check.button_pressed = true
+	_bots_check.focus_mode = Control.FOCUS_NONE
+	_bots_check.toggled.connect(_on_bots_toggled)
+	root_box.add_child(_bots_check)
+
 	_start_button = Button.new()
 	_start_button.text = "START"
 	_start_button.custom_minimum_size = Vector2(220, 46)
@@ -110,6 +118,10 @@ func _build_squad(squad: int) -> VBoxContainer:
 
 func _on_slot_pressed(slot: int) -> void:
 	GameClient.request_slot(slot, _name_field.text)
+
+
+func _on_bots_toggled(enabled: bool) -> void:
+	GameClient.set_fill_bots(enabled)
 
 
 func _on_start() -> void:
@@ -176,6 +188,7 @@ func _refresh() -> void:
 			Roster.team_of_slot(mine), filled]
 	var in_lobby := GameClient.phase == GameServer.Phase.LOBBY
 	_start_button.visible = in_lobby and GameClient.is_host()
+	_bots_check.visible = in_lobby and GameClient.is_host()
 	_start_button.disabled = mine < 0
 	if in_lobby and not GameClient.is_host():
 		_status.text += "

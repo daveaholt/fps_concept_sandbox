@@ -59,6 +59,7 @@ fps_concept_sandbox/
 | `12_hosting.md` | Azure dedicated-server hosting for friend tests |
 | `13_teams.md` | Teams, squads, the pre-game lobby, spawning and friendly fire |
 | `14_hud.md` | HUD layout, colour language, minimap |
+| `15_bots.md` | Server-side AI bots: identity, navigation, behaviour |
 
 ## Open questions
 

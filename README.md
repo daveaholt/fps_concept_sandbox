@@ -138,6 +138,7 @@ The docs are the source of truth. Read the ones relevant to your task before wri
 | `12_hosting.md` | Azure dedicated-server hosting + connection auth, for internet friend tests |
 | `13_teams.md` | Teams, squads, lobby, tickets, squad spawn |
 | `14_hud.md` | HUD layout, colour language, minimap |
+| `15_bots.md` | Server-side AI bots |
 
 ## Milestones
 

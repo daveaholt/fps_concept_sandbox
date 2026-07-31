@@ -13,6 +13,7 @@ const SPAWN_DISPERSAL_FALLBACK := 1.2
 enum Phase { LOBBY, PLAYING, RESULT }
 
 const HOST_PEER := 1
+const BOT_RESPAWN_SECONDS := 4.0
 const START_TICKETS := 25
 const RESULT_SECONDS := 8.0
 
@@ -43,6 +44,10 @@ var _spawn_tuning_cache: InfantryTuning = null
 var ballistics: BallisticsManager = null
 var _vehicles: Array = []
 var _wrecks: Array = []
+var _navigation: NavigationRegion3D = null
+var bots := BotController.new()
+var fill_bots: bool = true
+var _bot_respawns: Array = []
 var _corpses: Array = []
 
 
@@ -96,6 +101,14 @@ func register_level(spawn_root: Node, default_spawn: SpawnPoint,
 		ballistics.authoritative = is_active
 		if not ballistics.hit_confirmed.is_connected(_on_hit_confirmed):
 			ballistics.hit_confirmed.connect(_on_hit_confirmed)
+
+
+func register_navigation(region: NavigationRegion3D) -> void:
+	_navigation = region
+
+
+func navigation_map() -> RID:
+	return _navigation.get_navigation_map() if _navigation != null else RID()
 
 
 func get_peer_rtt(peer_id: int) -> float:
@@ -231,6 +244,12 @@ func handle_slot_request(peer: int, slot: int, chosen_name: String = "") -> void
 
 
 @rpc("any_peer", "call_remote", "reliable")
+func request_fill_bots(enabled: bool) -> void:
+	if is_active and multiplayer.get_remote_sender_id() == HOST_PEER:
+		fill_bots = enabled
+
+
+@rpc("any_peer", "call_remote", "reliable")
 func request_start() -> void:
 	if is_active:
 		handle_start_request(multiplayer.get_remote_sender_id())
@@ -268,6 +287,7 @@ func handle_start_request(peer: int) -> void:
 	tickets = {1: START_TICKETS, 2: START_TICKETS}
 	winning_team = 0
 	phase = Phase.PLAYING
+	_deploy_bots()
 	print("[server] match started by peer %d with %d players"
 		% [peer, roster.occupied_count()])
 	phase_changed.emit(phase)
@@ -291,8 +311,75 @@ func refresh_entity_authority() -> void:
 			node.refresh_authority()
 
 
+func bot_count() -> int:
+	var total := 0
+	for slot in Roster.SLOT_COUNT:
+		if BotController.is_bot(roster.occupant(slot)):
+			total += 1
+	return total
+
+
 func fill_with_bots() -> void:
-	pass
+	if not fill_bots:
+		return
+	for slot in Roster.SLOT_COUNT:
+		if not roster.is_free(slot):
+			continue
+		var next := BotController.next_peer(roster.to_array())
+		roster.assign(next, slot)
+		roster.set_slot_name(slot, Roster.callsign(slot))
+	print("[server] filled %d empty slots with bots" % bot_count())
+
+
+func _deploy_bots() -> void:
+	for slot in Roster.SLOT_COUNT:
+		var peer := roster.occupant(slot)
+		if BotController.is_bot(peer) and _possession.get(peer) == null:
+			_spawn_bot(peer)
+
+
+func _spawn_bot(peer: int) -> void:
+	var point := _random_spawn_point()
+	if point == null:
+		return
+	var origin := disperse(point.global_position)
+	_spawn_infantry(peer, origin, -point.global_transform.basis.z)
+
+
+func _random_spawn_point() -> SpawnPoint:
+	var options: Array = []
+	for node in get_tree().get_nodes_in_group("spawn_points"):
+		if node is SpawnPoint and node.enabled:
+			options.append(node)
+	if options.is_empty():
+		return _default_spawn
+	return options[randi() % options.size()]
+
+
+func _tick_bot_respawns(delta: float) -> void:
+	if _bot_respawns.is_empty():
+		return
+	var waiting: Array = []
+	for entry in _bot_respawns:
+		entry["seconds"] = float(entry["seconds"]) - delta
+		if float(entry["seconds"]) > 0.0:
+			waiting.append(entry)
+		elif phase == Phase.PLAYING:
+			_spawn_bot(int(entry["peer"]))
+	_bot_respawns = waiting
+
+
+func bot_targets_for(peer: int) -> Array:
+	var team := roster.team_of(peer)
+	var out: Array = []
+	for other in _possession:
+		var entity: Node = _possession[other]
+		if entity == null or not is_instance_valid(entity):
+			continue
+		if roster.team_of(other) == team:
+			continue
+		out.append(entity)
+	return out
 
 
 func _spend_ticket(team: int) -> void:
@@ -326,10 +413,21 @@ func _return_to_lobby() -> void:
 	tickets = {1: START_TICKETS, 2: START_TICKETS}
 	winning_team = 0
 	phase = Phase.LOBBY
+	_clear_bots()
 	print("[server] back to the lobby with slots kept (%d players)"
 		% roster.occupied_count())
 	phase_changed.emit(phase)
 	_broadcast_roster()
+
+
+func _clear_bots() -> void:
+	_bot_respawns.clear()
+	bots.clear()
+	for slot in Roster.SLOT_COUNT:
+		var peer := roster.occupant(slot)
+		if BotController.is_bot(peer):
+			_release_peer(peer)
+			roster.release(peer)
 
 
 func team_of_peer(peer_id: int) -> int:
@@ -738,12 +836,20 @@ func _physics_process(_delta: float) -> void:
 	_feed_commands()
 	_tick_wrecks(_delta)
 	_tick_corpses(_delta)
+	_tick_bot_respawns(_delta)
 
 
 func _feed_commands() -> void:
 	for peer_id in _possession:
 		var entity: Node = _possession[peer_id]
 		if not is_instance_valid(entity):
+			continue
+
+		if BotController.is_bot(peer_id):
+			var space := (entity as Node3D).get_world_3d().direct_space_state
+			entity.push_command(bots.command_for(peer_id, entity, tick,
+				1.0 / float(NetCli.TICK_RATE), bot_targets_for(peer_id), space,
+				navigation_map()))
 			continue
 
 		var queue: Array = _inputs.get(peer_id, [])
@@ -808,6 +914,12 @@ func entity_died(entity: Node) -> void:
 
 func _kill_occupant(peer_id: int) -> void:
 	if peer_id == 0:
+		return
+	if BotController.is_bot(peer_id):
+		_spend_ticket(roster.team_of(peer_id))
+		_release_peer(peer_id, true)
+		bots.forget(peer_id)
+		_bot_respawns.append({"peer": peer_id, "seconds": BOT_RESPAWN_SECONDS})
 		return
 	var entity: Node = _possession.get(peer_id)
 	var died_at := Vector3.ZERO

@@ -630,6 +630,18 @@ height = 0.2
 material = ExtResource("5_p1wtp")
 size = Vector3(0.25, 5, 0.25)
 
+[sub_resource type="NavigationMesh" id="NavigationMesh_bots"]
+geometry_parsed_geometry_type = 1
+geometry_collision_mask = 1
+geometry_source_geometry_mode = 1
+geometry_source_group_name = &"navmesh_source"
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.75
+agent_radius = 0.5
+agent_max_climb = 0.75
+agent_max_slope = 46.0
+
 [node name="Sandbox" type="Node3D" unique_id=340252235]
 script = ExtResource("1_ia0wb")
 
@@ -642,7 +654,7 @@ light_energy = 1.1
 shadow_enabled = true
 directional_shadow_max_distance = 400.0
 
-[node name="Terrain" type="StaticBody3D" parent="." unique_id=813683492]
+[node name="Terrain" type="StaticBody3D" parent="." unique_id=813683492 groups=["navmesh_source"]]
 collision_mask = 0
 
 [node name="Visual" type="Node3D" parent="Terrain" unique_id=442185634]
@@ -1463,6 +1475,9 @@ modulate = Color(0.6, 0.95, 1, 1)
 text = "Airfield"
 font_size = 128
 outline_size = 16
+
+[node name="Navigation" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_bots")
 
 [node name="Vehicles" type="Node3D" parent="." unique_id=1679540455]
 
